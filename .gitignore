@@ -1,0 +1,9 @@
+.env*
+.vercel
+node_modules
+.DS_Store
+
+# не потрібне для сайту
+variant-b/
+variant-c/
+ads/
