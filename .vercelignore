@@ -1,0 +1,7 @@
+.env*
+.git
+variant-b
+variant-c
+ads
+.DS_Store
+README.txt
