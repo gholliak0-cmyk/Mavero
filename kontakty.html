@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap&subset=cyrillic" rel="stylesheet">
 <link rel="stylesheet" href="/shared/base.css">
 <link rel="stylesheet" href="/shared/page.css">
+<script src="/shared/track.js"></script>
 </head>
 <body>
 <header class="top">
@@ -80,13 +81,15 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = form.elements, btn = form.querySelector('button[type=submit]');
-    const data = { type: 'question', name: f.name.value.trim(), contact: f.contact.value.trim(), text: f.text.value.trim(), website: f.website.value };
+    const eventId = MAVERO.newEventId();
+    const data = { type: 'question', event_id: eventId, name: f.name.value.trim(), contact: f.contact.value.trim(), text: f.text.value.trim(), website: f.website.value };
     if (!data.name || data.contact.length < 5 || data.text.length < 5) { err.textContent = 'Вкажіть ім’я, контакт і питання.'; return; }
     err.textContent = ''; btn.disabled = true; btn.textContent = 'Надсилаємо…';
     try {
       const r = await fetch('/api/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error);
+      MAVERO.track('Lead', {}, eventId);
       form.classList.add('is-sent'); ok.hidden = false; ok.focus();
     } catch (x) {
       err.textContent = (x && x.message) || 'Не вдалося надіслати, спробуйте ще раз.';

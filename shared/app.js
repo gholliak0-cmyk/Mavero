@@ -105,6 +105,11 @@
     render(state);
   }
 
+  /* ---------- Meta Pixel (shared/track.js): що дивились і коли перейшли до замовлення ---------- */
+  const item = (s = state, n = 1) => ({ content_ids: [s.v.code], content_name: label(s), content_type: 'product', value: s.v.price * n, currency: 'UAH', num_items: n });
+  listeners.push((s) => M.trackOnce('vc:' + s.v.code, 'ViewContent', item(s)));
+  const checkout = () => M.trackOnce('ic', 'InitiateCheckout', item());
+
   /* ---------- Прайс: усі позиції, згенеровані з даних ---------- */
   function mountPricelist(root) {
     const frag = document.createDocumentFragment();
@@ -261,6 +266,7 @@
 
     const phone = f.phone;
     phone.addEventListener('focus', () => { if (!phone.value) phone.value = '+380 '; });
+    form.addEventListener('focusin', checkout);
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -281,9 +287,10 @@
       const n = qty();
       const dl = form.querySelector('input[name="delivery"]:checked');
       const pl = form.querySelector('input[name="payment"]:checked');
+      const eventId = M.newEventId();
       try {
         await post({
-          type: 'order',
+          type: 'order', event_id: eventId,
           name, phone: phone.value,
           product: `${state.cat.name} ${state.size.label}`, colour: state.v.name.toLowerCase(),
           code: state.v.code, price: state.v.price, qty: n, total: state.v.price * n,
@@ -292,6 +299,9 @@
           comment: val('comment'),
           website: val('website'),
         });
+        // Лише після відповіді сервера «ok»: невдалі спроби й помилки валідації не рахуються
+        const ph = digits.length === 10 ? '38' + digits : digits;
+        M.track('Purchase', item(state, n), eventId, { ph, ct: val('city').toLowerCase().replace(/\s+/g, ''), country: 'ua' });
         form.classList.add('is-sent');
         const ok = $('[data-order-ok]', form);
         ok.hidden = false;
@@ -356,6 +366,7 @@
     const f = $('#order');
     if (!f) return;
     e.preventDefault();
+    checkout();
     f.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     setTimeout(() => { const i = $('input[name="name"]', f); i && i.focus({ preventScroll: true }); }, 500);
   });
