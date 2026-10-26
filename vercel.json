@@ -1,0 +1,8 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/variant-a", "destination": "/", "permanent": true },
+    { "source": "/variant-a/:path*", "destination": "/", "permanent": true }
+  ]
+}

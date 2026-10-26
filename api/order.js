@@ -3,7 +3,8 @@
      TELEGRAM_BOT_TOKEN — токен від @BotFather
      TELEGRAM_CHAT_ID   — куди слати заявки
    type: 'order' — замовлення (дані отримувача, доставка, оплата)
-   type: 'review' — відгук з форми «Залиште відгук» */
+   type: 'review' — відгук з форми «Залиште відгук»
+   type: 'question' — питання зі сторінки «Контакти» */
 
 const esc = (s) => String(s ?? '').trim().slice(0, 500)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -50,6 +51,17 @@ function reviewMessage(b) {
   ].filter((x) => x !== null).join('\n');
 }
 
+function questionMessage(b) {
+  return [
+    '❓ <b>Питання з сайту</b>',
+    '',
+    `👤 ${esc(b.name)}`,
+    `📞 ${esc(b.contact)}`,
+    '',
+    esc(b.text),
+  ].join('\n');
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false });
 
@@ -64,7 +76,12 @@ export default async function handler(req, res) {
   if (b.website) return res.status(200).json({ ok: true });
 
   let text;
-  if (b.type === 'review') {
+  if (b.type === 'question') {
+    if (!b.name || String(b.contact || '').trim().length < 5 || String(b.text || '').trim().length < 5) {
+      return res.status(400).json({ ok: false, error: 'Вкажіть ім’я, контакт і питання' });
+    }
+    text = questionMessage(b);
+  } else if (b.type === 'review') {
     if (!b.name || String(b.text || '').trim().length < 10) {
       return res.status(400).json({ ok: false, error: 'Вкажіть ім’я і текст відгуку' });
     }

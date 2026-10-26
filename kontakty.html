@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Контакти — Mavero</title>
+<meta name="description" content="Напишіть Mavero: допоможемо обрати бізікубик чи бізіборд, відповімо щодо замовлення, обміну й повернення.">
+<link rel="canonical" href="https://maverokids.com/kontakty">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mavero">
+<meta property="og:title" content="Контакти — Mavero">
+<meta property="og:description" content="Напишіть нам, і ми відповімо на телефон чи в месенджер.">
+<meta property="og:url" content="https://maverokids.com/kontakty">
+<meta property="og:image" content="https://maverokids.com/assets/og.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap&subset=cyrillic" rel="stylesheet">
+<link rel="stylesheet" href="/shared/base.css">
+<link rel="stylesheet" href="/shared/page.css">
+</head>
+<body>
+<header class="top">
+  <a class="brandmark" href="/" aria-label="Mavero, на головну">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 8l14 10v14L6 22z" fill="#F3F5EE"/><path d="M34 8L20 18v14l14-10z" fill="#C6F51E"/><path d="M6 22v10h6V26z" fill="#F3F5EE"/><path d="M34 22v10h-6V26z" fill="#C6F51E"/></svg>
+    MAVERO
+  </a>
+  <nav aria-label="Розділи">
+    <a href="/#configurator">Каталог</a>
+    <a href="/dostavka">Доставка й оплата</a>
+    <a href="/povernennya">Обмін і повернення</a>
+    <a href="/kontakty" aria-current="page">Контакти</a>
+  </nav>
+</header>
+
+<main class="doc">
+  <div class="doc-head">
+    <h1>Контакти</h1>
+    <p class="doc-lead">Mavero працює онлайн. Залиште питання, і ми відповімо на телефон чи в месенджер, який ви вкажете.</p>
+  </div>
+
+  <div class="doc-body">
+    <section>
+      <h2>Напишіть нам</h2>
+      <form class="form" data-question novalidate>
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <label class="field"><span>Ім’я</span><input name="name" autocomplete="name" required></label>
+        <label class="field"><span>Телефон, Telegram чи Instagram</span><input name="contact" autocomplete="tel" placeholder="+380 67 123 45 67 або @нікнейм" required></label>
+        <label class="field"><span>Ваше питання</span><textarea name="text" required placeholder="Наприклад: який кубик обрати для дитини 1,5 року?"></textarea></label>
+        <button class="btn" type="submit">Надіслати</button>
+        <p class="form-err" data-question-error aria-live="assertive"></p>
+        <p class="form-ok" data-question-ok hidden tabindex="-1">Дякуємо! Ми отримали ваше питання і скоро відповімо.</p>
+      </form>
+      <p class="muted" style="margin-top:16px">Надсилаючи форму, ви погоджуєтесь з <a href="/privacy">політикою конфіденційності</a>.</p>
+    </section>
+
+    <section>
+      <h2>З чим можемо допомогти</h2>
+      <ul>
+        <li>Підібрати кубик чи борд під вік дитини.</li>
+        <li>Уточнити наявність, кольори й розміри.</li>
+        <li>Змінити чи скасувати замовлення.</li>
+        <li>Оформити <a href="/povernennya">обмін або повернення</a>.</li>
+      </ul>
+    </section>
+  </div>
+
+  <aside class="doc-side">
+    <h2>Хочете замовити?</h2>
+    <p>Оберіть модель на сайті, і ми зв’яжемося з вами для підтвердження.</p>
+    <a class="btn" href="/#configurator">До каталогу</a>
+  </aside>
+</main>
+
+<script>
+(() => {
+  const form = document.querySelector('[data-question]');
+  const err = form.querySelector('[data-question-error]'), ok = form.querySelector('[data-question-ok]');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = form.elements, btn = form.querySelector('button[type=submit]');
+    const data = { type: 'question', name: f.name.value.trim(), contact: f.contact.value.trim(), text: f.text.value.trim(), website: f.website.value };
+    if (!data.name || data.contact.length < 5 || data.text.length < 5) { err.textContent = 'Вкажіть ім’я, контакт і питання.'; return; }
+    err.textContent = ''; btn.disabled = true; btn.textContent = 'Надсилаємо…';
+    try {
+      const r = await fetch('/api/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error);
+      form.classList.add('is-sent'); ok.hidden = false; ok.focus();
+    } catch (x) {
+      err.textContent = (x && x.message) || 'Не вдалося надіслати, спробуйте ще раз.';
+      btn.disabled = false; btn.textContent = 'Надіслати';
+    }
+  });
+})();
+</script>
+<footer class="bottom">
+  <ul>
+    <li><a href="/">Головна</a></li>
+    <li><a href="/dostavka">Доставка й оплата</a></li>
+    <li><a href="/povernennya">Обмін і повернення</a></li>
+    <li><a href="/kontakty">Контакти</a></li>
+    <li><a href="/privacy">Політика конфіденційності</a></li>
+  </ul>
+  <p>© 2026 Mavero · Бізікубики й бізіборди з доставкою по Україні</p>
+</footer>
+</body>
+</html>
