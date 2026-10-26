@@ -4,7 +4,7 @@
    Purchase і Lead дублюються з сервера (Conversions API у api/order.js) з тим самим eventID,
    тому Meta рахує кожне замовлення один раз. */
 (function () {
-  const PIXEL_ID = '';
+  const PIXEL_ID = '1645310737067292';
 
   const M = (window.MAVERO = window.MAVERO || {});
   const sent = new Set(); // щоб ViewContent і InitiateCheckout не сипались на кожен клік
