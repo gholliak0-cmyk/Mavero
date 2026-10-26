@@ -35,6 +35,15 @@
     return b;
   }
 
+  // Прокрутка до конструктора: фото моделі по центру екрана (якщо конструктора немає — до форми)
+  function toConfigurator() {
+    const t = $('.cfg-visual') || $('#order');
+    if (!t) return;
+    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    t.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' });
+    if (location.hash !== '#configurator') history.replaceState(null, '', '#configurator');
+  }
+
   /* ---------- Конфігуратор ---------- */
   function mountConfigurator(root) {
     const el = (k) => $(`[data-cfg-${k}]`, root);
@@ -137,8 +146,7 @@
       if (!b) return;
       const [c, s, v] = b.dataset.pick.split('|');
       select(c, s, v);
-      const target = $('#configurator') || $('#order');
-      target && target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      toConfigurator();
     });
   }
 
@@ -185,14 +193,15 @@
       const [c, s, v] = e.currentTarget.dataset.p.split('|');
       dlg.close();
       select(c, s, v);
-      const t = $('#configurator');
-      t && t.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      toConfigurator();
     });
     render();
   }
 
   /* ---------- Відгуки з даних (REVIEWS у products.js) ---------- */
   function mountReviews(root) {
+    const sec = root.closest('section');
+    if (sec) sec.classList.toggle('no-reviews', !(M.REVIEWS || []).length);
     root.replaceChildren(...(M.REVIEWS || []).map((r) => {
       const [c, s, v] = r.item.split('|');
       const it = M.ITEMS.find((x) => x.cat.id === c && x.size.id === s && x.v.id === v);
@@ -356,8 +365,15 @@
     if (!a) return;
     e.preventDefault();
     select(a.dataset.gotoCat);
-    const t = $('#configurator');
-    t && t.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    toConfigurator();
+  });
+
+  // Інші посилання на конструктор («Змінити модель», футер, «Обрати розмір») — так само до фото
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href="#configurator"]:not([data-goto-cat]):not(.skip)');
+    if (!a || !$('[data-cfg]')) return;
+    e.preventDefault();
+    toConfigurator();
   });
 
   document.addEventListener('click', (e) => {
