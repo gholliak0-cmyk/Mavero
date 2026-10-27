@@ -356,6 +356,64 @@
     }
   }
 
+  /* ---------- Підказки під полем (міста й відділення Нової Пошти) ----------
+     load(текст) → масив або null (сервіс недоступний); render(елемент) → HTML рядка; pick(елемент) — вибір. */
+  let acId = 0;
+  function autocomplete(input, { load, render, pick, when = () => true }) {
+    const list = document.createElement('ul');
+    list.className = 'ac-list';
+    list.id = 'ac-' + ++acId;
+    list.setAttribute('role', 'listbox');
+    list.hidden = true;
+    input.closest('.field').after(list);
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-controls', list.id);
+    input.setAttribute('aria-expanded', 'false');
+    input.autocomplete = 'off';
+    let items = [], active = -1, seq = 0, timer;
+
+    function close() { list.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); }
+    function draw() {
+      list.innerHTML = items.length
+        ? items.map((x, i) => `<li role="option" id="${list.id}-${i}" aria-selected="${i === active}">${render(x)}</li>`).join('')
+        : '<li class="ac-none" aria-disabled="true">Нічого не знайдено. Спробуйте інакше.</li>';
+      list.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      if (active >= 0) {
+        input.setAttribute('aria-activedescendant', `${list.id}-${active}`);
+        list.children[active].scrollIntoView({ block: 'nearest' });
+      }
+    }
+    async function update() {
+      if (!when()) return close();
+      const my = ++seq;
+      const data = await load(input.value.trim());
+      if (my !== seq || document.activeElement !== input) return;
+      if (!data) return close();
+      items = data;
+      active = -1;
+      draw();
+    }
+    function choose(i) { if (!items[i]) return; pick(items[i]); close(); }
+
+    input.addEventListener('input', (e) => { if (!e.isTrusted) return; clearTimeout(timer); timer = setTimeout(update, 250); });
+    input.addEventListener('focus', update);
+    input.addEventListener('blur', () => setTimeout(close, 150));
+    input.addEventListener('keydown', (e) => {
+      if (list.hidden || !items.length) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        active = (active + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        draw();
+      } else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); choose(active); }
+      else if (e.key === 'Escape') close();
+    });
+    list.addEventListener('mousedown', (e) => e.preventDefault()); // фокус лишається в полі
+    list.addEventListener('click', (e) => { const li = e.target.closest('[role="option"]'); if (li) choose([...list.children].indexOf(li)); });
+    return { update, close };
+  }
+
   const lineName = (x) => `${x.cat.name} ${x.size.label}, ${x.v.name.toLowerCase()}`;
 
   function mountOrder(form) {
@@ -402,8 +460,7 @@
       const branch = $('[data-branch-label]', form);
       if (branch) {
         branch.textContent = { np: 'Номер відділення Нової Пошти', npbox: 'Номер поштомату', ukr: 'Адреса та індекс відділення Укрпошти' }[delivery] || 'Відділення';
-        f.branch.placeholder = { np: 'Наприклад, 12', npbox: 'Наприклад, 34567', ukr: 'вул. Шевченка, 5, 79000' }[delivery] || '';
-        f.branch.inputMode = delivery === 'ukr' ? 'text' : 'numeric';
+        f.branch.placeholder = { np: 'Номер або вулиця, наприклад 12', npbox: 'Номер або вулиця поштомату', ukr: 'вул. Шевченка, 5, 79000' }[delivery] || '';
       }
       const total = $('[data-order-total]', form);
       if (total) {
@@ -419,6 +476,46 @@
     form.addEventListener('change', (e) => { if (e.target.name === 'delivery' && f.branch.hasAttribute('aria-invalid')) f.branch.dispatchEvent(new Event('input')); });
     drawCart();
 
+    /* Нова Пошта: місто й відділення обираються зі списку, щоб не було помилок в адресі.
+       Якщо довідник недоступний (npDown), поля працюють як звичайний текст. */
+    let npCity = null, npBranch = null, npDown = false;
+    const isNP = () => radio('delivery') !== 'ukr';
+    const npKind = () => (radio('delivery') === 'npbox' ? 'postomat' : 'branch');
+    const npGet = (qs) => fetch('/api/np?' + qs)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((j) => j.data)
+      .catch(() => { npDown = true; return null; });
+    const enc = encodeURIComponent;
+    const setVal = (el, v) => { el.value = v; el.dispatchEvent(new Event('input')); }; // повторна перевірка поля
+    const resetBranch = () => { npBranch = null; if (f.branch.value) setVal(f.branch, ''); };
+
+    autocomplete(f.city, {
+      when: () => isNP() && !npDown,
+      load: (q) => (q.length < 2 ? Promise.resolve(null) : npGet('city=' + enc(q))),
+      render: (c) => `<b>${c.name}</b> <span>${c.type}${/обл\./.test(c.name) ? '' : `, ${c.area} обл.`}</span>`,
+      pick: (c) => {
+        npCity = c;
+        setVal(f.city, /обл\./.test(c.name) ? c.name : `${c.name}, ${c.area} обл.`);
+        resetBranch();
+        f.branch.focus();
+      },
+    });
+    autocomplete(f.branch, {
+      when: () => isNP() && !npDown && !!npCity,
+      load: (q) => npGet(`wh=${npCity.ref}&kind=${npKind()}&q=${enc(q)}`),
+      render: (w) => w.name.replace(/№\d+/, (m) => `<b>${m}</b>`),
+      pick: (w) => { npBranch = w; setVal(f.branch, w.name); },
+    });
+    f.city.addEventListener('input', (e) => { if (e.isTrusted) { npCity = null; resetBranch(); } });
+    f.branch.addEventListener('input', (e) => { if (e.isTrusted) npBranch = null; });
+    // відділення й поштомат — різні списки, тому при зміні способу доставки відділення обираємо заново
+    let lastDelivery = radio('delivery');
+    form.addEventListener('change', (e) => {
+      if (e.target.name !== 'delivery') return;
+      if (e.target.value !== lastDelivery) resetBranch();
+      lastDelivery = e.target.value;
+    });
+
     const phone = f.phone;
     M.phoneMask(phone);
     M.lettersOnly(f.name);
@@ -429,9 +526,13 @@
         : v.split(/\s+/).length < 2 ? 'Потрібні і прізвище, і ім’я — як у паспорті.' : '',
       phone: (v) => !v || v === '+380' ? 'Вкажіть номер телефону.'
         : !M.phoneValid(v) ? 'Номер неповний: потрібно +380 і ще 9 цифр.' : '',
-      city: (v) => (v.length < 2 ? 'Вкажіть місто або село.' : ''),
-      branch: (v) => !v ? (delivery() === 'ukr' ? 'Вкажіть адресу або індекс відділення.' : delivery() === 'npbox' ? 'Вкажіть номер поштомату.' : 'Вкажіть номер відділення.')
-        : delivery() !== 'ukr' && !/\d/.test(v) ? 'Вкажіть номер цифрами, наприклад 12.' : '',
+      city: (v) => v.length < 2 ? 'Вкажіть місто або село.'
+        : isNP() && !npDown && !npCity ? 'Оберіть місто зі списку підказок.' : '',
+      branch: (v) => !v ? (delivery() === 'ukr' ? 'Вкажіть адресу або індекс відділення.' : delivery() === 'npbox' ? 'Оберіть поштомат.' : 'Оберіть відділення.')
+        : delivery() === 'ukr' ? ''
+        : npDown ? (/\d/.test(v) ? '' : 'Вкажіть номер цифрами, наприклад 12.')
+        : !npCity ? 'Спершу оберіть місто зі списку.'
+        : !npBranch ? (delivery() === 'npbox' ? 'Оберіть поштомат зі списку.' : 'Оберіть відділення зі списку.') : '',
     });
 
     form.addEventListener('submit', async (e) => {

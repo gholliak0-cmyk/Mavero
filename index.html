@@ -405,6 +405,13 @@ button.pl-thumb{cursor:zoom-in}
 .field input,.field select,.field textarea{width:100%;min-height:52px;padding:12px 16px;font:inherit;font-size:18px;background:var(--surface-2);color:var(--ink);border:2px solid transparent;border-radius:0}
 .field textarea{resize:vertical}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+/* підказки Нової Пошти */
+.ac-list{list-style:none;margin:-16px 0 16px;padding:0;max-height:300px;overflow:auto;background:var(--surface);border:2px solid var(--accent);border-top:0}
+.ac-list li{padding:12px 16px;cursor:pointer;font-size:var(--s-small);line-height:1.4}
+.ac-list li span{color:var(--muted)}
+.ac-list li b{color:var(--ink)}
+.ac-list [aria-selected="true"],.ac-list [role="option"]:hover{background:var(--surface-2)}
+.ac-list .ac-none{color:var(--muted);cursor:default}
 .order-total{font-size:var(--s-body);margin:8px 0 16px;line-height:1.5}
 .order-total b{font-size:var(--s-lead);color:var(--accent)}
 .order-total span{font-size:var(--s-small);color:var(--muted)}
@@ -715,7 +722,7 @@ button.pl-thumb{cursor:zoom-in}
         <label class="opt"><input type="radio" name="delivery" value="npbox" data-title="Нова Пошта, поштомат"><span><img class="opt-logo" src="/assets/logos/nova-poshta.png" alt="" width="176" height="176"><b>Поштомат</b>Нової Пошти, 1–2 дні</span></label>
         <label class="opt"><input type="radio" name="delivery" value="ukr" data-title="Укрпошта"><span><img class="opt-logo" src="/assets/logos/ukrposhta.png" alt="" width="90" height="84"><b>Укрпошта</b>3–10 днів, лише передоплата</span></label>
       </div>
-      <label class="field"><span>Місто або село</span><input name="city" autocomplete="address-level2" placeholder="Наприклад, Київ" required></label>
+      <label class="field"><span>Місто або село</span><input name="city" placeholder="Почніть вводити, наприклад Київ" required></label>
       <label class="field"><span data-branch-label>Номер відділення Нової Пошти</span><input name="branch" required></label>
     </fieldset>
 
@@ -768,7 +775,7 @@ button.pl-thumb{cursor:zoom-in}
 <script src="/shared/products.js" defer></script>
 <script src="/shared/track.js" defer></script>
 <script src="/shared/forms.js" defer></script>
-<script src="/shared/app.js?v=4" defer></script>
+<script src="/shared/app.js?v=5" defer></script>
 <script>
 // Плаваюча кнопка ховається, коли видно форму замовлення або футер
 addEventListener("DOMContentLoaded",()=>{const b=document.querySelector(".hero-cta"),seen=new Set();
