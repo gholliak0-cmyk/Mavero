@@ -169,6 +169,40 @@
   listeners.push((s) => M.trackOnce('vc:' + s.v.code, 'ViewContent', item(s)));
   const checkout = () => M.trackOnce('ic', 'InitiateCheckout', item());
 
+  /* ---------- Перегляд фото на весь екран (галерея і прайс) ----------
+     Повертає open(list, i); елемент list: { src, alt, title, price?, old?, pick? } */
+  function mountLightbox(dlg) {
+    let list = [], at = 0;
+    function open(l, i) {
+      if (l) list = l;
+      at = (i + list.length) % list.length;
+      const x = list[at];
+      $('[data-lb-img]', dlg).innerHTML = `<img src="${x.src}" alt="${x.alt}" width="1100" height="1100">`;
+      $('[data-lb-cap]', dlg).innerHTML = x.title + (x.price ? ` — ${M.fmt(x.price)}${x.old ? ` <s>${M.fmt(x.old)}</s>` : ''}` : '');
+      const count = $('[data-lb-count]', dlg);
+      if (count) count.textContent = list.length > 1 ? `${at + 1} / ${list.length}` : '';
+      $$('[data-lb-prev],[data-lb-next]', dlg).forEach((b) => (b.hidden = list.length < 2));
+      const pick = $('[data-lb-pick]', dlg);
+      pick.hidden = !x.pick;
+      pick.dataset.p = x.pick || '';
+      if (!dlg.open) dlg.showModal();
+    }
+    const go = (d) => list.length > 1 && open(null, at + d);
+    $('[data-lb-prev]', dlg).addEventListener('click', () => go(-1));
+    $('[data-lb-next]', dlg).addEventListener('click', () => go(1));
+    $('[data-lb-close]', dlg).addEventListener('click', () => dlg.close());
+    const swiped = onSwipe($('[data-lb-img]', dlg), go);
+    dlg.addEventListener('click', (e) => { if (e.target === dlg && !swiped()) dlg.close(); });
+    dlg.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1); });
+    $('[data-lb-pick]', dlg).addEventListener('click', (e) => {
+      const [c, s, v] = e.currentTarget.dataset.p.split('|');
+      dlg.close();
+      select(c, s, v);
+      toConfigurator();
+    });
+    return open;
+  }
+
   /* ---------- Прайс: усі позиції, згенеровані з даних ---------- */
   function mountPricelist(root) {
     const frag = document.createDocumentFragment();
@@ -181,9 +215,13 @@
       cat.sizes.forEach((size) => size.variants.forEach((v) => {
         const li = document.createElement('li');
         li.className = 'pl-item';
-        const thumb = v.photo && root.dataset.plPhotos !== 'off' ? `<img src="${v.photo}" alt="" width="1100" height="1100" loading="lazy">` : M.art(cat, size, v);
-        li.innerHTML = `<span class="pl-thumb">${thumb}</span>
-          <span class="pl-body"><span class="pl-line"><span class="pl-name">${cat.name} ${size.label} · ${v.name}</span><span class="pl-price">${M.fmt(v.price)}</span></span>
+        const photo = v.photo && root.dataset.plPhotos !== 'off';
+        const name = `${cat.name} ${size.label} · ${v.name}`;
+        const thumb = photo
+          ? `<button type="button" class="pl-thumb" data-zoom="${cat.id}|${size.id}|${v.id}" aria-label="Фото: ${name}"><img src="${v.photo}" alt="" width="1100" height="1100" loading="lazy"></button>`
+          : `<span class="pl-thumb">${M.art(cat, size, v)}</span>`;
+        li.innerHTML = `${thumb}
+          <span class="pl-body"><span class="pl-line"><span class="pl-name">${name}</span><span class="pl-price">${M.fmt(v.price)}${v.old ? ` <s>${M.fmt(v.old)}</s>` : ''}</span></span>
           <span class="pl-desc">${v.zones.length} ${plural(v.zones.length)}: ${v.zones.slice(0, 4).join(', ').toLowerCase()}…</span>
           <button type="button" class="pl-pick" data-pick="${cat.id}|${size.id}|${v.id}">Обрати цю модель</button></span>`;
         ul.append(li);
@@ -191,7 +229,16 @@
       frag.append(group);
     });
     root.replaceChildren(frag);
+    const dlg = root.parentElement.querySelector('dialog');
+    const open = dlg && mountLightbox(dlg);
     root.addEventListener('click', (e) => {
+      const z = e.target.closest('[data-zoom]');
+      if (z && open) {
+        const { cat, size, v } = M.ITEMS.find((x) => `${x.cat.id}|${x.size.id}|${x.v.id}` === z.dataset.zoom);
+        const title = `${cat.name} ${size.label}, ${v.name.toLowerCase()}`;
+        open(v.gallery.map((g, k) => ({ src: g.src, alt: g.alt, title: k ? g.cap : title, price: v.price, old: v.old, pick: z.dataset.zoom })), 0);
+        return;
+      }
       const b = e.target.closest('[data-pick]');
       if (!b) return;
       const [c, s, v] = b.dataset.pick.split('|');
@@ -204,12 +251,13 @@
   function mountGallery(root) {
     const grid = $('[data-gallery-grid]', root), filters = $('[data-gallery-filters]', root), dlg = $('dialog', root);
     const shots = [];
-    M.ITEMS.forEach(({ cat, size, v }) => shots.push({ ...v.gallery[0], kind: cat.id, pick: `${cat.id}|${size.id}|${v.id}`, title: `${cat.name} ${size.label}, ${v.name.toLowerCase()}`, price: v.price }));
+    M.ITEMS.forEach(({ cat, size, v }) => shots.push({ ...v.gallery[0], kind: cat.id, pick: `${cat.id}|${size.id}|${v.id}`, title: `${cat.name} ${size.label}, ${v.name.toLowerCase()}`, price: v.price, old: v.old }));
     // живі фото з фотосесії — окремою групою
     const seen = new Set();
     M.ITEMS.forEach(({ v }) => v.gallery.filter((g) => g.life && !seen.has(g.src)).forEach((g) => { seen.add(g.src); shots.push({ ...g, kind: 'life', title: g.cap }); }));
     const kinds = [['all', 'Усі'], ['cube', 'Бізікубики'], ['board', 'Бізіборди'], ['life', 'Живі фото']];
-    let kind = 'all', list = shots, at = 0;
+    let kind = 'all', list = shots;
+    const open = mountLightbox(dlg);
 
     function render() {
       list = shots.filter((x) => kind === 'all' || x.kind === kind);
@@ -218,34 +266,12 @@
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'g-tile' + (x.kind === 'life' ? ' g-life' : '');
-        b.innerHTML = `<img src="${x.src}" alt="${x.alt}" width="1100" height="1100" loading="lazy"><span class="g-cap">${x.title}${x.price ? ` <b>${M.fmt(x.price)}</b>` : ''}</span>`;
-        b.addEventListener('click', () => open(i));
+        b.innerHTML = `<img src="${x.src}" alt="${x.alt}" width="1100" height="1100" loading="lazy"><span class="g-cap">${x.title}${x.price ? ` <b>${M.fmt(x.price)}</b>${x.old ? ` <s>${M.fmt(x.old)}</s>` : ''}` : ''}</span>`;
+        b.addEventListener('click', () => open(list, i));
         return b;
       }));
     }
-    function open(i) {
-      at = (i + list.length) % list.length;
-      const x = list[at];
-      $('[data-lb-img]', dlg).innerHTML = `<img src="${x.src}" alt="${x.alt}" width="1100" height="1100">`;
-      $('[data-lb-cap]', dlg).textContent = x.title + (x.price ? ' — ' + M.fmt(x.price) : '');
-      const pick = $('[data-lb-pick]', dlg);
-      pick.hidden = !x.pick;
-      pick.dataset.p = x.pick || '';
-      if (!dlg.open) dlg.showModal();
-    }
     filters.addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; render(); } });
-    $('[data-lb-prev]', dlg).addEventListener('click', () => open(at - 1));
-    $('[data-lb-next]', dlg).addEventListener('click', () => open(at + 1));
-    $('[data-lb-close]', dlg).addEventListener('click', () => dlg.close());
-    onSwipe($('[data-lb-img]', dlg), (d) => open(at + d));
-    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
-    dlg.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') open(at - 1); if (e.key === 'ArrowRight') open(at + 1); });
-    $('[data-lb-pick]', dlg).addEventListener('click', (e) => {
-      const [c, s, v] = e.currentTarget.dataset.p.split('|');
-      dlg.close();
-      select(c, s, v);
-      toConfigurator();
-    });
     render();
   }
 

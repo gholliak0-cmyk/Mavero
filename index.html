@@ -158,11 +158,14 @@ body{background:var(--bg);color:var(--ink)}
 .pl-head span{font-size:var(--s-small);color:var(--muted)}
 .pl-items{display:grid;grid-template-columns:1fr 1fr;column-gap:64px;row-gap:36px}
 .pl-item{display:grid;grid-template-columns:96px minmax(0,1fr);gap:20px;align-items:start}
-.pl-thumb{width:96px;height:96px;background:var(--surface);display:grid;place-items:center}
+.pl-thumb{width:96px;height:96px;padding:0;background:var(--surface);display:grid;place-items:center;position:relative;transform-origin:0 0;transition:transform .3s var(--ease),box-shadow .3s}
+button.pl-thumb{cursor:zoom-in}
+@media (hover:hover){button.pl-thumb:hover{transform:scale(2.2);z-index:3;box-shadow:0 12px 40px rgba(0,0,0,.55)}}
 .pl-thumb svg{width:84%;height:84%}
 .pl-thumb img{width:100%;height:100%;object-fit:cover}
 .pl-line{display:flex;justify-content:space-between;gap:16px;font-size:var(--s-body);font-weight:700}
 .pl-price{color:var(--accent);white-space:nowrap}
+.pl-price s,.lb-bar p s{color:var(--muted);font-weight:400;margin-left:10px;white-space:nowrap}
 .pl-desc{display:block;font-size:var(--s-small);color:var(--muted);max-width:44ch;margin-top:6px;line-height:1.45}
 .pl-pick{margin-top:8px;font-size:var(--s-small);font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:4px;min-height:32px}
 .pl-pick:hover{color:var(--accent)}
@@ -213,10 +216,16 @@ body{background:var(--bg);color:var(--ink)}
 .g-tile:hover img{transform:scale(1.04)}
 .g-cap{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;background:rgba(13,14,11,.84);color:var(--ink);font-size:var(--s-small);line-height:1.3;transform:translateY(101%);transition:transform .3s var(--ease)}
 .g-cap b{color:var(--accent);white-space:nowrap}
+.g-cap s{color:var(--muted);white-space:nowrap}
 .g-tile:hover .g-cap,.g-tile:focus-visible .g-cap{transform:none}
-.lb{border:0;padding:0;background:var(--bg);color:var(--ink);width:min(92vw,880px);max-height:94svh;overflow:auto}
+.lb{--lb-h:min(74svh,760px);border:0;padding:0;background:var(--bg);color:var(--ink);width:min(92vw,880px);max-height:94svh;overflow:auto;margin:3svh auto auto}
 .lb::backdrop{background:rgba(13,14,11,.9)}
-.lb-img img{width:100%;max-height:74svh;object-fit:contain;background:var(--surface)}
+/* висота фото однакова для всіх кадрів, а стрілки стоять на фото — нікуди не з'їжджають */
+.lb-img{height:var(--lb-h);background:var(--surface)}
+.lb-img img{width:100%;height:100%;object-fit:contain}
+.lb .lb-prev,.lb .lb-next{position:absolute;top:calc(var(--lb-h) / 2 - 26px);min-width:52px;min-height:52px;background:rgba(13,14,11,.72)}
+.lb-prev{left:12px}.lb-next{right:12px}
+.lb .lb-close{position:absolute;top:12px;right:12px;background:rgba(13,14,11,.72)}
 .lb-bar{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;padding:16px 20px 20px}
 .lb-bar p{flex:1 1 220px;font-size:var(--s-body);font-weight:700}
 .lb-nav{min-width:44px;min-height:44px;background:var(--surface-2);color:var(--ink);font-size:var(--s-lead);font-weight:800}
@@ -435,9 +444,9 @@ body{background:var(--bg);color:var(--ink)}
         <div class="lb-bar">
           <p data-zoom-cap></p>
           <span class="zoom-count" data-zoom-count></span>
-          <button type="button" class="lb-nav" data-zoom-prev aria-label="Попереднє фото">‹</button>
-          <button type="button" class="lb-nav" data-zoom-next aria-label="Наступне фото">›</button>
-          <button type="button" class="lb-nav" data-zoom-close aria-label="Закрити">×</button>
+          <button type="button" class="lb-nav lb-prev" data-zoom-prev aria-label="Попереднє фото">‹</button>
+          <button type="button" class="lb-nav lb-next" data-zoom-next aria-label="Наступне фото">›</button>
+          <button type="button" class="lb-nav lb-close" data-zoom-close aria-label="Закрити">×</button>
         </div>
       </dialog>
       <div class="cfg-thumbs" data-cfg-thumbs role="group" aria-label="Фото обраної моделі"></div>
@@ -526,8 +535,19 @@ body{background:var(--bg);color:var(--ink)}
 
 <section class="list" aria-labelledby="list-h">
   <div data-reveal><h2 id="list-h">Увесь прайс</h2>
-  <p>Двадцять позицій: три розміри кубиків у чотирьох кольорах і вісім бізібордів. Натисніть «Обрати», щоб побачити всі зони моделі.</p></div>
+  <p>Двадцять позицій: три розміри кубиків у чотирьох кольорах і вісім бізібордів. Натисніть на фото, щоб роздивитися модель, або «Обрати», щоб побачити всі її зони.</p></div>
   <div data-pricelist></div>
+  <dialog class="lb" aria-label="Перегляд фото">
+    <div class="lb-img" data-lb-img></div>
+    <div class="lb-bar">
+      <p data-lb-cap></p>
+      <span class="zoom-count" data-lb-count></span>
+      <button type="button" class="lb-nav lb-prev" data-lb-prev aria-label="Попереднє фото">‹</button>
+      <button type="button" class="lb-nav lb-next" data-lb-next aria-label="Наступне фото">›</button>
+      <button type="button" class="btn" data-lb-pick>Обрати цю модель</button>
+      <button type="button" class="lb-nav lb-close" data-lb-close aria-label="Закрити">×</button>
+    </div>
+  </dialog>
 </section>
 
 <section class="gal" id="gallery" aria-labelledby="gal-h" data-gallery>
@@ -541,10 +561,11 @@ body{background:var(--bg);color:var(--ink)}
     <div class="lb-img" data-lb-img></div>
     <div class="lb-bar">
       <p data-lb-cap></p>
-      <button type="button" class="lb-nav" data-lb-prev aria-label="Попереднє фото">‹</button>
-      <button type="button" class="lb-nav" data-lb-next aria-label="Наступне фото">›</button>
+      <span class="zoom-count" data-lb-count></span>
+      <button type="button" class="lb-nav lb-prev" data-lb-prev aria-label="Попереднє фото">‹</button>
+      <button type="button" class="lb-nav lb-next" data-lb-next aria-label="Наступне фото">›</button>
       <button type="button" class="btn" data-lb-pick>Обрати цю модель</button>
-      <button type="button" class="lb-nav" data-lb-close aria-label="Закрити">×</button>
+      <button type="button" class="lb-nav lb-close" data-lb-close aria-label="Закрити">×</button>
     </div>
   </dialog>
 </section>
