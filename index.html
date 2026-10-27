@@ -209,9 +209,9 @@ button.pl-thumb{cursor:zoom-in}
 .gal h2{font-size:var(--s-h2);font-weight:800;letter-spacing:-.03em;line-height:1}
 .gal-top p{font-size:var(--s-body);margin-top:16px;max-width:44ch}
 .gal-filters{display:flex;flex-wrap:wrap;gap:8px}
-.gal-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:40px;grid-auto-flow:dense}
+.gal-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:40px}
 .g-tile{position:relative;aspect-ratio:1/1;overflow:hidden;padding:0;background:var(--surface);text-align:left}
-.g-tile:first-child{grid-column:span 2;grid-row:span 2}
+.g-more{position:absolute;right:8px;top:8px;padding:4px 8px;background:rgba(13,14,11,.78);color:var(--ink);font-size:13px;font-weight:700}
 .g-tile img{width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease)}
 .g-tile:hover img{transform:scale(1.04)}
 .g-cap{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;background:rgba(13,14,11,.84);color:var(--ink);font-size:var(--s-small);line-height:1.3;transform:translateY(101%);transition:transform .3s var(--ease)}
@@ -611,7 +611,7 @@ button.pl-thumb{cursor:zoom-in}
 <section class="gal" id="gallery" aria-labelledby="gal-h" data-gallery>
   <div class="gal-top" data-reveal>
     <div><h2 id="gal-h">Галерея моделей</h2>
-    <p>Фото кожної моделі з прайсу і живі кадри з дітьми. Натисніть, щоб розглянути ближче й обрати.</p></div>
+    <p>Усі моделі з прайсу. Натисніть на фото, щоб погортати всі кадри моделі, зокрема з дітьми, і обрати її.</p></div>
     <div class="gal-filters" role="group" aria-label="Що показати" data-gallery-filters></div>
   </div>
   <div class="gal-grid" data-gallery-grid></div>
@@ -775,7 +775,7 @@ button.pl-thumb{cursor:zoom-in}
 <script src="/shared/products.js" defer></script>
 <script src="/shared/track.js" defer></script>
 <script src="/shared/forms.js" defer></script>
-<script src="/shared/app.js?v=5" defer></script>
+<script src="/shared/app.js?v=6" defer></script>
 <script>
 // Плаваюча кнопка ховається, коли видно форму замовлення або футер
 addEventListener("DOMContentLoaded",()=>{const b=document.querySelector(".hero-cta"),seen=new Set();

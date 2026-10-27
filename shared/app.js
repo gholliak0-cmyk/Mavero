@@ -247,6 +247,12 @@
     return open;
   }
 
+  // Усі фото однієї моделі для перегляду: перше — з прайсу, далі — деталі й фото з дітьми
+  const slidesOf = ({ cat, size, v }) => v.gallery.map((g, k) => ({
+    src: g.src, alt: g.alt, title: k ? g.cap : `${cat.name} ${size.label}, ${v.name.toLowerCase()}`,
+    price: v.price, old: v.old, pick: `${cat.id}|${size.id}|${v.id}`,
+  }));
+
   /* ---------- Прайс: усі позиції, згенеровані з даних ---------- */
   function mountPricelist(root) {
     const frag = document.createDocumentFragment();
@@ -278,9 +284,7 @@
     root.addEventListener('click', (e) => {
       const z = e.target.closest('[data-zoom]');
       if (z && open) {
-        const { cat, size, v } = M.ITEMS.find((x) => `${x.cat.id}|${x.size.id}|${x.v.id}` === z.dataset.zoom);
-        const title = `${cat.name} ${size.label}, ${v.name.toLowerCase()}`;
-        open(v.gallery.map((g, k) => ({ src: g.src, alt: g.alt, title: k ? g.cap : title, price: v.price, old: v.old, pick: z.dataset.zoom })), 0);
+        open(slidesOf(byKey(z.dataset.zoom)), 0);
         return;
       }
       const b = e.target.closest('[data-pick]');
@@ -291,27 +295,24 @@
     });
   }
 
-  /* ---------- Міні-галерея: усі фото товарів, фільтр і перегляд на весь екран ---------- */
+  /* ---------- Міні-галерея: плитка на кожну модель; у перегляді — усі фото цієї моделі ---------- */
   function mountGallery(root) {
     const grid = $('[data-gallery-grid]', root), filters = $('[data-gallery-filters]', root), dlg = $('dialog', root);
-    const shots = [];
-    M.ITEMS.forEach(({ cat, size, v }) => shots.push({ ...v.gallery[0], kind: cat.id, pick: `${cat.id}|${size.id}|${v.id}`, title: `${cat.name} ${size.label}, ${v.name.toLowerCase()}`, price: v.price, old: v.old }));
-    // живі фото з фотосесії — окремою групою
-    const seen = new Set();
-    M.ITEMS.forEach(({ v }) => v.gallery.filter((g) => g.life && !seen.has(g.src)).forEach((g) => { seen.add(g.src); shots.push({ ...g, kind: 'life', title: g.cap }); }));
-    const kinds = [['all', 'Усі'], ['cube', 'Бізікубики'], ['board', 'Бізіборди'], ['life', 'Живі фото']];
-    let kind = 'all', list = shots;
+    const shots = M.ITEMS.map((it) => ({ ...slidesOf(it)[0], kind: it.cat.id, slides: slidesOf(it) }));
+    const kinds = [['all', 'Усі'], ['cube', 'Бізікубики'], ['board', 'Бізіборди']];
+    let kind = 'all';
     const open = mountLightbox(dlg);
 
     function render() {
-      list = shots.filter((x) => kind === 'all' || x.kind === kind);
+      const list = shots.filter((x) => kind === 'all' || x.kind === kind);
       filters.replaceChildren(...kinds.map(([k, t]) => chip(`${t} · ${k === 'all' ? shots.length : shots.filter((x) => x.kind === k).length}`, k === kind, { kind: k })));
-      grid.replaceChildren(...list.map((x, i) => {
+      grid.replaceChildren(...list.map((x) => {
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'g-tile' + (x.kind === 'life' ? ' g-life' : '');
-        b.innerHTML = `<img src="${x.src}" alt="${x.alt}" width="1100" height="1100" loading="lazy"><span class="g-cap">${x.title}${x.price ? ` <b>${M.fmt(x.price)}</b>${x.old ? ` <s>${M.fmt(x.old)}</s>` : ''}` : ''}</span>`;
-        b.addEventListener('click', () => open(list, i));
+        b.className = 'g-tile';
+        const more = x.slides.length > 1 ? `<span class="g-more">+${x.slides.length - 1} фото</span>` : '';
+        b.innerHTML = `<img src="${x.src}" alt="${x.alt}" width="1100" height="1100" loading="lazy">${more}<span class="g-cap">${x.title}${x.price ? ` <b>${M.fmt(x.price)}</b>${x.old ? ` <s>${M.fmt(x.old)}</s>` : ''}` : ''}</span>`;
+        b.addEventListener('click', () => open(x.slides, 0));
         return b;
       }));
     }
