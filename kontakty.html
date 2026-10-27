@@ -82,6 +82,7 @@
   // Номер телефону маскуємо як +380 …; нікнейм (@…) вводиться як є
   const isPhone = (v) => /^[+\d(]/.test(v.trim());
   MAVERO.phoneMask(form.elements.contact, isPhone);
+  MAVERO.lettersOnly(form.elements.name);
   const check = MAVERO.validate(form, {
     name: (v) => (!v ? 'Вкажіть ім’я.' : ''),
     contact: (v) => !v ? 'Вкажіть телефон або нікнейм у Telegram чи Instagram.'

@@ -1,5 +1,6 @@
 /* Mavero — перевірка форм: маска українського телефону й помилки під кожним полем.
    M.phoneMask(input) — у полі можна набрати лише номер у вигляді +380 67 123 45 67.
+   M.lettersOnly(input) — у полі імені не можна ввести цифри й символи.
    M.validate(form, rules) — rules: { ім'я_поля: (значення) => 'текст помилки' або '' }.
    Повертає check(): перевіряє всі поля, показує помилки й переводить до першого неправильного. */
 (function () {
@@ -46,6 +47,15 @@
       if (document.activeElement === input) input.setSelectionRange(pos, pos);
     });
   };
+
+  // Ім'я: лише літери, пробіл, апостроф і дефіс — цифри й символи просто не вводяться
+  M.lettersOnly = (input) => input.addEventListener('input', () => {
+    const v = input.value, clean = v.replace(/[^\p{L}\s'’ʼ-]/gu, '');
+    if (clean === v) return;
+    const pos = Math.max(0, (input.selectionStart || 0) - (v.length - clean.length));
+    input.value = clean;
+    input.setSelectionRange(pos, pos);
+  });
 
   M.validate = (form, rules) => {
     const f = form.elements;

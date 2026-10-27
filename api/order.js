@@ -16,16 +16,28 @@ const esc = (s) => String(s ?? '').trim().slice(0, 500)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const money = (n) => Number(n || 0).toLocaleString('uk-UA') + ' грн';
 
+// Товари замовлення: новий формат — масив items (кошик), старий — одне поле product
+function orderItems(b) {
+  const list = Array.isArray(b.items) && b.items.length ? b.items.slice(0, 20) : [b];
+  return list.map((x) => ({
+    product: x.product, colour: x.colour, code: x.code,
+    price: Number(x.price) || 0,
+    qty: Math.max(1, Math.min(10, parseInt(x.qty, 10) || 1)),
+  }));
+}
+
 function orderMessage(b, phone) {
-  const qty = Math.max(1, Math.min(10, parseInt(b.qty, 10) || 1));
-  const total = Number(b.total) || Number(b.price) * qty;
+  const items = orderItems(b);
+  const total = items.reduce((a, x) => a + x.price * x.qty, 0);
   const cod = /наклад/i.test(b.payment || '');
   return [
     '🛒 <b>Нове замовлення</b>',
     '',
-    `📦 ${esc(b.product)}${b.colour ? ', ' + esc(b.colour) : ''}`,
-    b.code ? `🏷 Код постачальника: <code>${esc(b.code)}</code>` : null,
-    `🔢 Кількість: ${qty} × ${money(b.price)}`,
+    ...items.flatMap((x, i) => [
+      `📦 ${items.length > 1 ? `${i + 1}. ` : ''}${esc(x.product)}${x.colour ? ', ' + esc(x.colour) : ''}`,
+      x.code ? `🏷 Код постачальника: <code>${esc(x.code)}</code>` : null,
+      `🔢 Кількість: ${x.qty} × ${money(x.price)}`,
+    ]),
     `💰 Сума: <b>${money(total)}</b>`,
     '',
     '<b>Отримувач</b>',
@@ -90,10 +102,17 @@ async function sendToMeta(req, b, phone) {
   if (b.type === 'order' && fn) user_data.fn = [sha(fn)];
   if (b.city) user_data.ct = [sha(String(b.city).replace(/\s+/g, ''))];
 
-  const qty = Math.max(1, Math.min(10, parseInt(b.qty, 10) || 1));
+  const items = orderItems(b);
   const event = b.type === 'question'
     ? { event_name: 'Lead' }
-    : { event_name: 'Purchase', custom_data: { currency: 'UAH', value: Number(b.price) * qty, content_ids: [String(b.code || '')], content_type: 'product', num_items: qty } };
+    : { event_name: 'Purchase', custom_data: {
+        currency: 'UAH',
+        value: items.reduce((a, x) => a + x.price * x.qty, 0),
+        content_ids: items.map((x) => String(x.code || '')),
+        contents: items.map((x) => ({ id: String(x.code || ''), quantity: x.qty })),
+        content_type: 'product',
+        num_items: items.reduce((a, x) => a + x.qty, 0),
+      } };
 
   const body = {
     data: [{
@@ -148,6 +167,9 @@ export default async function handler(req, res) {
     phone = String(b.phone || '').replace(/[^\d+]/g, '');
     if (!b.name || phone.length < 10) {
       return res.status(400).json({ ok: false, error: 'Вкажіть прізвище, ім’я і телефон' });
+    }
+    if (!orderItems(b).some((x) => x.product && x.price > 0)) {
+      return res.status(400).json({ ok: false, error: 'Кошик порожній' });
     }
     if (!b.city || !b.branch) {
       return res.status(400).json({ ok: false, error: 'Вкажіть місто і відділення' });
