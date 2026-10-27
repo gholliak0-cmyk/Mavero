@@ -346,13 +346,26 @@
     }
     listeners.push(sync);
     form.addEventListener('change', sync);
+    // змінили перевізника — оновлюємо підказку під полем відділення, якщо там була помилка
+    form.addEventListener('change', (e) => { if (e.target.name === 'delivery' && f.branch.hasAttribute('aria-invalid')) f.branch.dispatchEvent(new Event('input')); });
     form.addEventListener('input', (e) => { if (e.target.name === 'qty') sync(); });
     $$('[data-qty]', form).forEach((b) => b.addEventListener('click', () => { f.qty.value = Math.max(1, Math.min(10, qty() + +b.dataset.qty)); sync(); }));
     sync();
 
     const phone = f.phone;
-    phone.addEventListener('focus', () => { if (!phone.value) phone.value = '+380 '; });
+    M.phoneMask(phone);
     form.addEventListener('focusin', checkout);
+    const delivery = () => radio('delivery');
+    const check = M.validate(form, {
+      name: (v) => !v ? 'Вкажіть прізвище та ім’я отримувача.'
+        : /\d/.test(v) ? 'Ім’я не може містити цифр.'
+        : v.split(/\s+/).length < 2 ? 'Потрібні і прізвище, і ім’я — як у паспорті.' : '',
+      phone: (v) => !v || v === '+380' ? 'Вкажіть номер телефону.'
+        : !M.phoneValid(v) ? 'Номер неповний: потрібно +380 і ще 9 цифр.' : '',
+      city: (v) => (v.length < 2 ? 'Вкажіть місто або село.' : ''),
+      branch: (v) => !v ? (delivery() === 'ukr' ? 'Вкажіть адресу або індекс відділення.' : delivery() === 'npbox' ? 'Вкажіть номер поштомату.' : 'Вкажіть номер відділення.')
+        : delivery() !== 'ukr' && !/\d/.test(v) ? 'Вкажіть номер цифрами, наприклад 12.' : '',
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -360,13 +373,9 @@
       const name = val('name');
       const digits = phone.value.replace(/\D/g, '');
       const err = $('[data-order-error]', form);
-      const bad = !name ? 'Вкажіть, будь ласка, прізвище та ім’я отримувача.'
-        : !/^(380\d{9}|0\d{9})$/.test(digits) ? 'Перевірте номер: потрібно 10 цифр, наприклад 067 123 45 67.'
-        : f.city && !val('city') ? 'Вкажіть місто або село.'
-        : f.branch && !val('branch') ? 'Вкажіть відділення або поштомат.'
-        : f.payment && !radio('payment') ? 'Оберіть спосіб оплати.' : '';
-      err.textContent = bad;
-      if (bad) { const first = form.querySelector(':invalid'); first && first.focus(); return; }
+      const valid = check();
+      err.textContent = valid ? '' : 'Перевірте поля, позначені червоним.';
+      if (!valid) return;
 
       const btn = $('button[type="submit"]', form);
       btn.disabled = true;
@@ -386,7 +395,7 @@
           website: val('website'),
         });
         // Лише після відповіді сервера «ok»: невдалі спроби й помилки валідації не рахуються
-        const ph = digits.length === 10 ? '38' + digits : digits;
+        const ph = digits;
         M.track('Purchase', item(state, n), eventId, { ph, ct: val('city').toLowerCase().replace(/\s+/g, ''), country: 'ua' });
         form.classList.add('is-sent');
         const ok = $('[data-order-ok]', form);
@@ -401,12 +410,16 @@
 
   /* ---------- Форма «Залишити відгук» → теж у Telegram, власник додає відгук на сайт ---------- */
   function mountReviewForm(form) {
+    const check = M.validate(form, {
+      rname: (v) => (!v ? 'Вкажіть ім’я або нікнейм.' : ''),
+      rtext: (v) => (!v ? 'Напишіть кілька слів про покупку.' : v.length < 10 ? 'Напишіть хоча б одне речення.' : ''),
+    });
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const f = form.elements, err = $('[data-review-error]', form);
       const name = f.rname.value.trim(), text = f.rtext.value.trim();
-      err.textContent = !name ? 'Вкажіть ім’я або нікнейм.' : text.length < 10 ? 'Напишіть хоча б одне речення.' : '';
-      if (err.textContent) return;
+      if (!check()) return;
+      err.textContent = '';
       const btn = $('button[type="submit"]', form);
       btn.disabled = true;
       try {

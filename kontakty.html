@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="/shared/base.css">
 <link rel="stylesheet" href="/shared/page.css">
 <script src="/shared/track.js"></script>
+<script src="/shared/forms.js"></script>
 </head>
 <body>
 <header class="top">
@@ -78,12 +79,22 @@
 (() => {
   const form = document.querySelector('[data-question]');
   const err = form.querySelector('[data-question-error]'), ok = form.querySelector('[data-question-ok]');
+  // Номер телефону маскуємо як +380 …; нікнейм (@…) вводиться як є
+  const isPhone = (v) => /^[+\d(]/.test(v.trim());
+  MAVERO.phoneMask(form.elements.contact, isPhone);
+  const check = MAVERO.validate(form, {
+    name: (v) => (!v ? 'Вкажіть ім’я.' : ''),
+    contact: (v) => !v ? 'Вкажіть телефон або нікнейм у Telegram чи Instagram.'
+      : isPhone(v) ? (MAVERO.phoneValid(v) ? '' : 'Номер неповний: потрібно +380 і ще 9 цифр.')
+      : /^@?[\w.]{3,}$/.test(v) ? '' : 'Нікнейм пишіть так: @mavero (латиниця, цифри, крапка, _).',
+    text: (v) => (!v ? 'Напишіть ваше питання.' : v.length < 5 ? 'Опишіть питання трохи детальніше.' : ''),
+  });
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = form.elements, btn = form.querySelector('button[type=submit]');
     const eventId = MAVERO.newEventId();
     const data = { type: 'question', event_id: eventId, name: f.name.value.trim(), contact: f.contact.value.trim(), text: f.text.value.trim(), website: f.website.value };
-    if (!data.name || data.contact.length < 5 || data.text.length < 5) { err.textContent = 'Вкажіть ім’я, контакт і питання.'; return; }
+    if (!check()) { err.textContent = 'Перевірте поля, позначені червоним.'; return; }
     err.textContent = ''; btn.disabled = true; btn.textContent = 'Надсилаємо…';
     try {
       const r = await fetch('/api/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });

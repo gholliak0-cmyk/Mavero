@@ -53,6 +53,9 @@ body{background:var(--bg);color:var(--ink)}
 .field textarea{resize:vertical;min-height:140px}
 .field input:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
 .form .btn{justify-self:start}
+.field-err{display:block;color:#FF9C8A;font-size:var(--s-small);line-height:1.4;margin-top:6px}
+.field-err:empty{display:none}
+.field [aria-invalid="true"],.field [aria-invalid="true"]:focus{border-color:#FF9C8A}
 .form-err{color:#FF9C8A;font-size:var(--s-small);min-height:1.4em;margin-top:8px}
 .form-ok{font-size:var(--s-lead);font-weight:700;color:var(--accent)}
 .form.is-sent .field,.form.is-sent .btn{display:none}
