@@ -75,6 +75,13 @@ body{background:var(--bg);color:var(--ink)}
 .cfg-figure svg{width:100%;height:100%}
 .cfg-figure img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cfg-visual figcaption{position:absolute;left:20px;bottom:16px;right:20px;font-size:var(--s-small);color:var(--muted)}
+.cfg-visual.can-zoom{cursor:zoom-in}
+.cfg-hint{display:none;position:absolute;right:12px;top:12px;padding:6px 10px;background:rgba(13,14,11,.72);color:var(--ink);font-size:14px;font-weight:700;pointer-events:none}
+.cfg-visual.can-zoom .cfg-hint{display:block}
+.cfg-visual.can-swipe .cfg-hint::before{content:"‹ свайп › · "}
+.lb-img{user-select:none;-webkit-user-select:none}
+.lb-img img,.cfg-figure img{pointer-events:none}
+.zoom-count{font-size:var(--s-small);color:var(--muted);font-weight:700}
 .cfg-figure:has(img) + figcaption{color:var(--paper-ink);background:rgba(243,245,238,.86);padding:8px 12px;left:12px;right:auto;bottom:12px}
 .cfg-panel{grid-column:8/13}
 .cfg-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
@@ -422,7 +429,17 @@ body{background:var(--bg);color:var(--ink)}
   <h2 id="cfg-h" data-reveal><span>Зберіть свій набір</span></h2>
   <div class="cfg" data-cfg>
     <div class="cfg-media">
-      <figure class="cfg-visual"><div class="cfg-figure" data-cfg-figure></div><figcaption data-cfg-caption></figcaption></figure>
+      <figure class="cfg-visual"><div class="cfg-figure" data-cfg-figure></div><figcaption data-cfg-caption></figcaption><span class="cfg-hint" aria-hidden="true">збільшити</span></figure>
+      <dialog class="lb zoom" aria-label="Фото моделі" data-cfg-zoom>
+        <div class="lb-img" data-zoom-img></div>
+        <div class="lb-bar">
+          <p data-zoom-cap></p>
+          <span class="zoom-count" data-zoom-count></span>
+          <button type="button" class="lb-nav" data-zoom-prev aria-label="Попереднє фото">‹</button>
+          <button type="button" class="lb-nav" data-zoom-next aria-label="Наступне фото">›</button>
+          <button type="button" class="lb-nav" data-zoom-close aria-label="Закрити">×</button>
+        </div>
+      </dialog>
       <div class="cfg-thumbs" data-cfg-thumbs role="group" aria-label="Фото обраної моделі"></div>
     </div>
     <div class="cfg-panel">
@@ -667,7 +684,7 @@ body{background:var(--bg);color:var(--ink)}
 
 <script src="/shared/products.js" defer></script>
 <script src="/shared/track.js" defer></script>
-<script src="/shared/app.js" defer></script>
+<script src="/shared/app.js?v=2" defer></script>
 <script>
 // Плаваюча кнопка ховається, коли видно форму замовлення або футер
 addEventListener("DOMContentLoaded",()=>{const b=document.querySelector(".hero-cta"),seen=new Set();

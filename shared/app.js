@@ -35,6 +35,22 @@
     return b;
   }
 
+  // Горизонтальний свайп пальцем або мишею: fn(+1) — наступне, fn(-1) — попереднє.
+  // Повертає функцію, яка каже, чи щойно був свайп (щоб не спрацював клік).
+  function onSwipe(el, fn) {
+    let x0 = null, y0 = 0, swiped = false;
+    el.style.touchAction = 'pan-y';
+    el.addEventListener('pointerdown', (e) => { x0 = e.clientX; y0 = e.clientY; swiped = false; });
+    el.addEventListener('pointercancel', () => (x0 = null));
+    el.addEventListener('pointerup', (e) => {
+      if (x0 === null) return;
+      const dx = e.clientX - x0, dy = e.clientY - y0;
+      x0 = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) { swiped = true; fn(dx < 0 ? 1 : -1); }
+    });
+    return () => swiped;
+  }
+
   // Прокрутка до конструктора: фото моделі по центру екрана (якщо конструктора немає — до форми)
   function toConfigurator() {
     const t = $('.cfg-visual') || $('#order');
@@ -49,6 +65,44 @@
     const el = (k) => $(`[data-cfg-${k}]`, root);
     const cats = el('cats'), sizes = el('sizes'), vars = el('variants');
     const fig = el('figure'), cap = el('caption');
+    const zoom = el('zoom');
+    let gal = [], at = 0;
+
+    function showPhoto(i) {
+      at = (i + gal.length) % gal.length;
+      const g = gal[at];
+      fig.innerHTML = `<img src="${g.src}" alt="${g.alt}" width="1100" height="1100">`;
+      if (cap) cap.textContent = g.cap;
+      $$('.thumb', el('thumbs')).forEach((t, k) => t.setAttribute('aria-pressed', k === at ? 'true' : 'false'));
+      if (zoom && zoom.open) zoomShow();
+    }
+    function step(d) {
+      if (gal.length < 2) return;
+      fig.classList.remove('is-in');
+      showPhoto(at + d);
+      requestAnimationFrame(() => fig.classList.add('is-in'));
+    }
+    function zoomShow() {
+      const g = gal[at];
+      $('[data-zoom-img]', zoom).innerHTML = `<img src="${g.src}" alt="${g.alt}" width="1100" height="1100">`;
+      $('[data-zoom-cap]', zoom).textContent = g.cap;
+      $('[data-zoom-count]', zoom).textContent = gal.length > 1 ? `${at + 1} / ${gal.length}` : '';
+      $$('[data-zoom-prev],[data-zoom-next]', zoom).forEach((b) => (b.hidden = gal.length < 2));
+    }
+    const figSwiped = onSwipe(fig.parentElement, step);
+    if (zoom) {
+      fig.parentElement.addEventListener('click', () => {
+        if (figSwiped() || !gal.length) return;
+        zoomShow();
+        zoom.showModal();
+      });
+      const zoomSwiped = onSwipe($('[data-zoom-img]', zoom), step);
+      $('[data-zoom-prev]', zoom).addEventListener('click', () => step(-1));
+      $('[data-zoom-next]', zoom).addEventListener('click', () => step(1));
+      $('[data-zoom-close]', zoom).addEventListener('click', () => zoom.close());
+      zoom.addEventListener('click', (e) => { if (e.target === zoom && !zoomSwiped()) zoom.close(); });
+      zoom.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') step(-1); if (e.key === 'ArrowRight') step(1); });
+    }
 
     function render(s) {
       cats.replaceChildren(...M.CATALOG.map((c) => chip(c.plural, c === s.cat, { cat: c.id })));
@@ -60,11 +114,7 @@
       fig.classList.remove('is-in');
       const thumbs = el('thumbs');
       if (s.v.photo && root.dataset.cfgPhotos !== 'off') {
-        const show = (g) => {
-          fig.innerHTML = `<img src="${g.src}" alt="${g.alt}" width="1100" height="1100">`;
-          if (cap) cap.textContent = g.cap;
-        };
-        show(s.v.gallery[0]);
+        gal = s.v.gallery;
         if (thumbs) {
           thumbs.hidden = s.v.gallery.length < 2;
           thumbs.replaceChildren(...s.v.gallery.map((g, i) => {
@@ -74,16 +124,16 @@
             b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
             b.setAttribute('aria-label', g.cap);
             b.innerHTML = `<img src="${g.src}" alt="" width="120" height="120" loading="lazy">`;
-            b.addEventListener('click', () => {
-              $$('.thumb', thumbs).forEach((t) => t.setAttribute('aria-pressed', t === b ? 'true' : 'false'));
-              fig.classList.remove('is-in');
-              show(g);
-              requestAnimationFrame(() => fig.classList.add('is-in'));
-            });
+            b.addEventListener('click', () => step(i - at));
             return b;
           }));
         }
+        showPhoto(0);
+        fig.parentElement.classList.toggle('can-zoom', !!zoom);
+        fig.parentElement.classList.toggle('can-swipe', gal.length > 1);
       } else {
+        gal = [];
+        fig.parentElement.classList.remove('can-zoom', 'can-swipe');
         if (thumbs) thumbs.replaceChildren();
         fig.innerHTML = M.art(s.cat, s.size, s.v, { scaled: true });
         if (cap) cap.textContent = s.cat.id === 'cube'
@@ -187,6 +237,7 @@
     $('[data-lb-prev]', dlg).addEventListener('click', () => open(at - 1));
     $('[data-lb-next]', dlg).addEventListener('click', () => open(at + 1));
     $('[data-lb-close]', dlg).addEventListener('click', () => dlg.close());
+    onSwipe($('[data-lb-img]', dlg), (d) => open(at + d));
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
     dlg.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') open(at - 1); if (e.key === 'ArrowRight') open(at + 1); });
     $('[data-lb-pick]', dlg).addEventListener('click', (e) => {
@@ -347,15 +398,14 @@
     if (sel) sel.append(...M.ITEMS.map(({ cat, size, v }) => new Option(`${cat.name} ${size.label}, ${v.name.toLowerCase()}`)));
   }
 
-  /* ---------- «Чим корисний»: опис змінюється разом з обраною категорією ---------- */
+  /* ---------- «Чим корисний»: власні вкладки, не залежать від обраного товару ---------- */
   function mountUse(root) {
-    const show = (s) => {
-      $$('[data-use-panel]', root).forEach((p) => (p.hidden = p.dataset.usePanel !== s.cat.id));
-      $$('[data-use-tab]', root).forEach((b) => b.setAttribute('aria-pressed', b.dataset.useTab === s.cat.id ? 'true' : 'false'));
+    const show = (id) => {
+      $$('[data-use-panel]', root).forEach((p) => (p.hidden = p.dataset.usePanel !== id));
+      $$('[data-use-tab]', root).forEach((b) => b.setAttribute('aria-pressed', b.dataset.useTab === id ? 'true' : 'false'));
     };
-    root.addEventListener('click', (e) => { const b = e.target.closest('[data-use-tab]'); if (b) select(b.dataset.useTab); });
-    listeners.push(show);
-    show(state);
+    root.addEventListener('click', (e) => { const b = e.target.closest('[data-use-tab]'); if (b) show(b.dataset.useTab); });
+    show($('[data-use-tab]', root).dataset.useTab);
   }
 
   /* ---------- Кнопки «Замовити цю» ведуть до форми ---------- */
