@@ -1,10 +1,10 @@
-/* Mavero — спільна логіка: конфігуратор, прайс, форма замовлення, анімації появи. */
+/* Mavero — спільна логіка: картки товарів, форма замовлення з вибором розміру й кольору, консультація, анімації появи. */
 (function () {
   const M = window.MAVERO;
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  /* ---------- Стан вибору (спільний для конфігуратора і форми) ---------- */
+  /* ---------- Що замовляють (спільне для карток, галереї і форми) ---------- */
   const state = { cat: M.CATALOG[0], size: M.CATALOG[0].sizes[1], v: M.CATALOG[0].sizes[1].variants[1] };
   const listeners = [];
   function select(catId, sizeId, vId) {
@@ -51,167 +51,81 @@
     return () => swiped;
   }
 
-  // Прокрутка до конструктора: фото моделі по центру екрана (якщо конструктора немає — до форми)
-  function toConfigurator() {
-    const t = $('.cfg-visual') || $('#order');
-    if (!t) return;
-    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-    t.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' });
-    if (location.hash !== '#configurator') history.replaceState(null, '', '#configurator');
+  // Ціна біля розміру: одна ціна або «від …», якщо моделі цього розміру коштують по-різному
+  function sizePrice(z) {
+    const ps = z.variants.map((v) => v.price), min = Math.min(...ps), same = ps.every((p) => p === min);
+    const old = same && z.variants[0].old;
+    return `<em class="price-big">${same ? '' : 'від '}${M.fmt(min)}</em>${old ? ` <s class="price-old">${M.fmt(old)}</s>` : ''}`;
+  }
+  // Кружечок кольору: фон ставимо через style, бо в «різнобарвного» він з лапками всередині
+  const paintDots = (root) => $$('[data-sw]', root).forEach((d) => (d.style.background = M.COLOURS[d.dataset.sw].swatch));
+
+  // Перехід до форми замовлення: вибраний товар уже стоїть у формі, розмір і колір можна змінити там
+  function goOrder() {
+    const f = $('#order');
+    if (!f) return;
+    checkout();
+    f.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    if (location.hash !== '#order') history.replaceState(null, '', '#order');
   }
 
-  /* ---------- Конфігуратор ---------- */
-  function mountConfigurator(root) {
-    const el = (k) => $(`[data-cfg-${k}]`, root);
-    const cats = el('cats'), sizes = el('sizes'), vars = el('variants');
-    const fig = el('figure'), cap = el('caption');
-    const zoom = el('zoom');
-    let gal = [], at = 0;
-
-    function showPhoto(i) {
-      at = (i + gal.length) % gal.length;
-      const g = gal[at];
-      fig.innerHTML = `<img src="${g.src}" alt="${g.alt}" width="1100" height="1100">`;
-      if (cap) cap.textContent = g.cap;
-      $$('.thumb', el('thumbs')).forEach((t, k) => t.setAttribute('aria-pressed', k === at ? 'true' : 'false'));
-      if (zoom && zoom.open) zoomShow();
-    }
-    function step(d) {
-      if (gal.length < 2) return;
-      fig.classList.remove('is-in');
-      showPhoto(at + d);
-      requestAnimationFrame(() => fig.classList.add('is-in'));
-    }
-    function zoomShow() {
-      const g = gal[at];
-      $('[data-zoom-img]', zoom).innerHTML = `<img src="${g.src}" alt="${g.alt}" width="1100" height="1100">`;
-      $('[data-zoom-cap]', zoom).textContent = g.cap;
-      $('[data-zoom-count]', zoom).textContent = gal.length > 1 ? `${at + 1} / ${gal.length}` : '';
-      $$('[data-zoom-prev],[data-zoom-next]', zoom).forEach((b) => (b.hidden = gal.length < 2));
-    }
-    const figSwiped = onSwipe(fig.parentElement, step);
-    if (zoom) {
-      fig.parentElement.addEventListener('click', () => {
-        if (figSwiped() || !gal.length) return;
-        zoomShow();
-        zoom.showModal();
-      });
-      const zoomSwiped = onSwipe($('[data-zoom-img]', zoom), step);
-      $('[data-zoom-prev]', zoom).addEventListener('click', () => step(-1));
-      $('[data-zoom-next]', zoom).addEventListener('click', () => step(1));
-      $('[data-zoom-close]', zoom).addEventListener('click', () => zoom.close());
-      zoom.addEventListener('click', (e) => { if (e.target === zoom && !zoomSwiped()) zoom.close(); });
-      zoom.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') step(-1); if (e.key === 'ArrowRight') step(1); });
-    }
-
-    function render(s) {
-      cats.replaceChildren(...M.CATALOG.map((c) => chip(c.plural, c === s.cat, { cat: c.id })));
-      sizes.replaceChildren(...s.cat.sizes.map((z) => chip(z.label, z === s.size, { size: z.id })));
-      vars.replaceChildren(...s.size.variants.map((v) => chip(v.name, v === s.v, { v: v.id }, M.COLOURS[v.colour].swatch)));
-      const varLabel = el('variants-label');
-      if (varLabel) varLabel.textContent = s.cat.id === 'cube' ? 'Колір' : 'Модель';
-
-      fig.classList.remove('is-in');
-      const thumbs = el('thumbs');
-      if (s.v.photo && root.dataset.cfgPhotos !== 'off') {
-        gal = s.v.gallery;
-        if (thumbs) {
-          thumbs.hidden = s.v.gallery.length < 2;
-          thumbs.replaceChildren(...s.v.gallery.map((g, i) => {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'thumb';
-            b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
-            b.setAttribute('aria-label', g.cap);
-            b.innerHTML = `<img src="${g.src}" alt="" width="120" height="120" loading="lazy">`;
-            b.addEventListener('click', () => step(i - at));
-            return b;
-          }));
-        }
-        showPhoto(0);
-        fig.parentElement.classList.toggle('can-zoom', !!zoom);
-        fig.parentElement.classList.toggle('can-swipe', gal.length > 1);
-      } else {
-        gal = [];
-        fig.parentElement.classList.remove('can-zoom', 'can-swipe');
-        if (thumbs) thumbs.replaceChildren();
-        fig.innerHTML = M.art(s.cat, s.size, s.v, { scaled: true });
-        if (cap) cap.textContent = s.cat.id === 'cube'
-          ? `Малюнок: ${s.v.name.toLowerCase()} кубик ${s.size.label} у масштабі до 30 см.`
-          : `Малюнок моделі «${s.v.name}». Живе фото надішлемо в месенджер.`;
+  /* ---------- Каталог: картка на кожен товар — фото, назва, опис, розміри з цінами, кольори ---------- */
+  function mountCatalog(root) {
+    const dlg = root.parentElement.querySelector('dialog');
+    const open = dlg && mountLightbox(dlg);
+    root.replaceChildren(...M.CATALOG.map((cat) => {
+      const card = document.createElement('article');
+      card.className = 'pc';
+      const size0 = cat.id === 'cube' ? cat.sizes[1] : cat.sizes[0];
+      const pick = { cat, size: size0, v: size0.variants[cat.id === 'cube' ? 1 : 0] };
+      card.innerHTML = `<button type="button" class="pc-photo" data-pc-photo></button>
+        <div class="pc-body">
+          <h3>${cat.name}</h3>
+          <p class="pc-desc">${cat.blurb}</p>
+          <p class="pc-label">Розмір і ціна</p>
+          <div class="pc-sizes" data-pc-sizes></div>
+          <p class="pc-label">${cat.id === 'cube' ? 'Колір' : 'Модель'}: <b data-pc-vname></b></p>
+          <div class="pc-sw" data-pc-sw></div>
+          <div class="pc-actions"><button type="button" class="btn" data-pc-order>Замовити</button><button type="button" class="btn btn-ghost" data-consult>Консультація</button></div>
+        </div>`;
+      function draw() {
+        const name = lineName(pick);
+        $('[data-pc-photo]', card).innerHTML = `<img src="${pick.v.photo}" alt="${name}" width="1100" height="1100" loading="lazy">${pick.v.gallery.length > 1 ? `<span class="g-more">+${pick.v.gallery.length - 1} фото</span>` : ''}`;
+        $('[data-pc-photo]', card).setAttribute('aria-label', `Збільшити фото: ${name}`);
+        $('[data-pc-sizes]', card).innerHTML = cat.sizes.map((z) =>
+          `<button type="button" class="pc-size" data-size="${z.id}" aria-pressed="${z === pick.size}"><b>${z.label}</b>${sizePrice(z)}</button>`).join('');
+        $('[data-pc-vname]', card).textContent = pick.v.name;
+        $('[data-pc-sw]', card).innerHTML = pick.size.variants.map((v) => cat.id === 'cube'
+          ? `<button type="button" class="sw" data-v="${v.id}" data-sw="${v.colour}" aria-pressed="${v === pick.v}" aria-label="${v.name}" title="${v.name}"></button>`
+          : `<button type="button" class="sw sw-photo" data-v="${v.id}" aria-pressed="${v === pick.v}" aria-label="${v.name}" title="${v.name}"><img src="${v.photo}" alt="" width="1100" height="1100" loading="lazy"></button>`).join('');
+        paintDots(card);
+        $('[data-consult]', card).dataset.consult = keyOf(pick);
       }
-      requestAnimationFrame(() => fig.classList.add('is-in'));
-
-      root.dataset.colour = s.v.colour;
-      el('name').textContent = label(s);
-      el('now').textContent = M.fmt(s.v.price);
-      const old = el('old');
-      if (old) { old.textContent = s.v.old ? M.fmt(s.v.old) : ''; old.hidden = !s.v.old; }
-      const n = s.v.zones.length;
-      el('count').textContent = `${n} ${plural(n)}`;
-      const note = el('note'); if (note) note.textContent = s.size.zonesTitle;
-      el('zones').replaceChildren(...s.v.zones.map((z) => Object.assign(document.createElement('li'), { textContent: z })));
-    }
-
-    root.addEventListener('click', (e) => {
-      const b = e.target.closest('button.chip');
-      if (!b) return;
-      if (b.dataset.cat) select(b.dataset.cat);
-      else if (b.dataset.size) select(state.cat.id, b.dataset.size);
-      else if (b.dataset.v) select(state.cat.id, state.size.id, b.dataset.v);
-    });
-    listeners.push(render);
-    render(state);
-
-    // Скільки вже в кошику — під кнопками
-    const cartNote = el('cart'), addBtn = $('[data-add]', root);
-    const drawNote = () => {
-      if (!cartNote) return;
-      const n = cartCount();
-      cartNote.innerHTML = cart.auto || !n ? '' : `У кошику: ${n} шт. на ${M.fmt(cartSum())} · <a href="#order" data-buy>Оформити</a>`;
-    };
-    cartListeners.push(drawNote);
-    drawNote();
-    if (addBtn) addBtn.addEventListener('click', () => {
-      addBtn.textContent = '✓ Додано. Оберіть ще одну модель';
-      clearTimeout(addBtn.t);
-      addBtn.t = setTimeout(() => (addBtn.textContent = '+ Додати в кошик і обрати ще'), 2200);
-    });
+      card.addEventListener('click', (e) => {
+        const z = e.target.closest('[data-size]'), v = e.target.closest('[data-v]');
+        if (z) {
+          pick.size = cat.sizes.find((x) => x.id === z.dataset.size);
+          // колір зберігаємо, якщо такий є в новому розмірі
+          pick.v = pick.size.variants.find((x) => x.id === pick.v.id) || pick.size.variants[0];
+        } else if (v) pick.v = pick.size.variants.find((x) => x.id === v.dataset.v);
+        else if (e.target.closest('[data-pc-photo]') && open) return open(slidesOf(pick), 0);
+        else if (e.target.closest('[data-pc-order]')) { select(cat.id, pick.size.id, pick.v.id); return goOrder(); }
+        else return;
+        draw();
+        M.trackOnce('vc:' + pick.v.code, 'ViewContent', item(pick));
+      });
+      draw();
+      return card;
+    }));
   }
-
-  /* ---------- Кошик: кілька різних моделей в одному замовленні ----------
-     Поки покупець нічого не клав у кошик (auto), кошик показує модель, обрану в конструкторі. */
-  const CART_KEY = 'mavero-cart';
   const keyOf = (s) => `${s.cat.id}|${s.size.id}|${s.v.id}`;
   const byKey = (k) => M.ITEMS.find((x) => keyOf(x) === k);
-  const clampQty = (n) => Math.max(1, Math.min(10, parseInt(n, 10) || 1));
-  const cart = { lines: [], auto: true };
-  try {
-    const saved = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-    cart.lines = saved.filter((l) => byKey(l.k)).map((l) => ({ k: l.k, n: clampQty(l.n) }));
-    cart.auto = !cart.lines.length;
-  } catch (x) { /* немає доступу до сховища — кошик живе до перезавантаження */ }
-  if (cart.auto) cart.lines = [{ k: keyOf(state), n: 1 }];
-  const cartListeners = [];
-  function cartChanged() {
-    try { localStorage.setItem(CART_KEY, JSON.stringify(cart.auto ? [] : cart.lines)); } catch (x) { /* див. вище */ }
-    cartListeners.forEach((fn) => fn());
-  }
-  function cartAdd(k) {
-    if (cart.auto) { cart.lines = []; cart.auto = false; }
-    if (!cart.lines.some((l) => l.k === k)) cart.lines.push({ k, n: 1 });
-    cartChanged();
-  }
-  const cartItems = () => cart.lines.map((l) => ({ ...byKey(l.k), n: l.n, k: l.k }));
-  const cartCount = () => cart.lines.reduce((a, l) => a + l.n, 0);
-  const cartSum = () => cartItems().reduce((a, x) => a + x.v.price * x.n, 0);
-  listeners.push((s) => { if (cart.auto) { cart.lines = [{ k: keyOf(s), n: 1 }]; cartChanged(); } });
+  const lineName = (x) => `${x.cat.name} ${x.size.label}, ${x.v.name.toLowerCase()}`;
 
   /* ---------- Meta Pixel (shared/track.js): що дивились і коли перейшли до замовлення ---------- */
   const item = (s = state, n = 1) => ({ content_ids: [s.v.code], content_name: label(s), content_type: 'product', value: s.v.price * n, currency: 'UAH', num_items: n });
-  const cartEvent = () => ({ content_ids: cartItems().map((x) => x.v.code), contents: cartItems().map((x) => ({ id: x.v.code, quantity: x.n })), content_type: 'product', value: cartSum(), currency: 'UAH', num_items: cartCount() });
   listeners.push((s) => M.trackOnce('vc:' + s.v.code, 'ViewContent', item(s)));
-  const checkout = () => M.trackOnce('ic', 'InitiateCheckout', cartEvent());
+  const checkout = () => M.trackOnce('ic', 'InitiateCheckout', item());
 
   /* ---------- Перегляд фото на весь екран (галерея і прайс) ----------
      Повертає open(list, i); елемент list: { src, alt, title, price?, old?, pick? } */
@@ -242,7 +156,7 @@
       const [c, s, v] = e.currentTarget.dataset.p.split('|');
       dlg.close();
       select(c, s, v);
-      toConfigurator();
+      goOrder();
     });
     return open;
   }
@@ -252,48 +166,6 @@
     src: g.src, alt: g.alt, title: k ? g.cap : `${cat.name} ${size.label}, ${v.name.toLowerCase()}`,
     price: v.price, old: v.old, pick: `${cat.id}|${size.id}|${v.id}`,
   }));
-
-  /* ---------- Прайс: усі позиції, згенеровані з даних ---------- */
-  function mountPricelist(root) {
-    const frag = document.createDocumentFragment();
-    M.CATALOG.forEach((cat) => {
-      const count = cat.sizes.reduce((a, s) => a + s.variants.length, 0);
-      const group = document.createElement('div');
-      group.className = 'pl-group';
-      group.innerHTML = `<div class="pl-head"><h3>${cat.plural}</h3><span>${count} позицій</span></div><ul class="pl-items"></ul>`;
-      const ul = $('ul', group);
-      cat.sizes.forEach((size) => size.variants.forEach((v) => {
-        const li = document.createElement('li');
-        li.className = 'pl-item';
-        const photo = v.photo && root.dataset.plPhotos !== 'off';
-        const name = `${cat.name} ${size.label} · ${v.name}`;
-        const thumb = photo
-          ? `<button type="button" class="pl-thumb" data-zoom="${cat.id}|${size.id}|${v.id}" aria-label="Фото: ${name}"><img src="${v.photo}" alt="" width="1100" height="1100" loading="lazy"></button>`
-          : `<span class="pl-thumb">${M.art(cat, size, v)}</span>`;
-        li.innerHTML = `${thumb}
-          <span class="pl-body"><span class="pl-line"><span class="pl-name">${name}</span><span class="pl-price">${M.fmt(v.price)}${v.old ? ` <s>${M.fmt(v.old)}</s>` : ''}</span></span>
-          <span class="pl-desc">${v.zones.length} ${plural(v.zones.length)}: ${v.zones.slice(0, 4).join(', ').toLowerCase()}…</span>
-          <button type="button" class="pl-pick" data-pick="${cat.id}|${size.id}|${v.id}">Обрати цю модель</button></span>`;
-        ul.append(li);
-      }));
-      frag.append(group);
-    });
-    root.replaceChildren(frag);
-    const dlg = root.parentElement.querySelector('dialog');
-    const open = dlg && mountLightbox(dlg);
-    root.addEventListener('click', (e) => {
-      const z = e.target.closest('[data-zoom]');
-      if (z && open) {
-        open(slidesOf(byKey(z.dataset.zoom)), 0);
-        return;
-      }
-      const b = e.target.closest('[data-pick]');
-      if (!b) return;
-      const [c, s, v] = b.dataset.pick.split('|');
-      select(c, s, v);
-      toConfigurator();
-    });
-  }
 
   /* ---------- Міні-галерея: плитка на кожну модель; у перегляді — усі фото цієї моделі ---------- */
   function mountGallery(root) {
@@ -415,43 +287,41 @@
     return { update, close };
   }
 
-  const lineName = (x) => `${x.cat.name} ${x.size.label}, ${x.v.name.toLowerCase()}`;
-
   function mountOrder(form) {
     const f = form.elements;
-    const box = $('[data-cart]', form);
+    const box = $('[data-pick]', form);
     const radio = (name) => (form.querySelector(`input[name="${name}"]:checked`) || {}).value || '';
 
-    // Кошик у формі: фото, назва, ціна, кількість, прибрати
-    function drawCart() {
-      const items = cartItems();
-      box.innerHTML = items.length ? `<ul class="cart-list">${items.map((x) => `
-        <li class="cart-line" data-k="${x.k}">
-          <span class="cart-img">${x.v.photo ? `<img src="${x.v.photo}" alt="" width="1100" height="1100" loading="lazy">` : M.art(x.cat, x.size, x.v)}</span>
-          <span class="cart-info"><b>${lineName(x)}</b><span>${M.fmt(x.v.price)}${x.v.old ? ` <s>${M.fmt(x.v.old)}</s>` : ''}</span></span>
-          <span class="cart-qty"><button type="button" data-q="-1" aria-label="Менше: ${lineName(x)}"${x.n < 2 ? ' disabled' : ''}>−</button><output aria-live="polite">${x.n}</output><button type="button" data-q="1" aria-label="Більше: ${lineName(x)}"${x.n > 9 ? ' disabled' : ''}>+</button></span>
-          <button type="button" class="cart-del" data-del aria-label="Прибрати з кошика: ${lineName(x)}">×</button>
-        </li>`).join('')}</ul>`
-        : '<p class="cart-empty">Кошик порожній. Оберіть модель у конструкторі.</p>';
-      box.insertAdjacentHTML('beforeend', '<a class="cart-more" href="#configurator" data-cart-more>+ Додати інший товар</a>');
+    // Вибір товару у формі: товар → розмір (з ціною) → колір або модель, внизу — підсумок з фото
+    const opt = (name, value, on, inner) => `<label class="opt"><input type="radio" name="${name}" value="${value}"${on ? ' checked' : ''}><span>${inner}</span></label>`;
+    let refocus = '';
+    function drawPick(s) {
+      $('[data-pick-cat]', box).innerHTML = M.CATALOG.map((c) => opt('p_cat', c.id, c === s.cat, `<b>${c.name}</b>${c.sizes.map((z) => z.label).join(' · ')}`)).join('');
+      $('[data-pick-size]', box).innerHTML = s.cat.sizes.map((z) => opt('p_size', z.id, z === s.size, `<b>${z.label}</b><i class="opt-price">${sizePrice(z)}</i>`)).join('');
+      $('[data-pick-vlabel]', box).textContent = s.cat.id === 'cube' ? 'Колір' : 'Модель';
+      $('[data-pick-v]', box).innerHTML = s.size.variants.map((v) => opt('p_v', v.id, v === s.v, s.cat.id === 'cube'
+        ? `<b><i class="dot" data-sw="${v.colour}"></i>${v.name}</b>`
+        : `<img class="opt-thumb" src="${v.photo}" alt="" width="1100" height="1100" loading="lazy"><b>${v.name}</b>${M.fmt(v.price)}`)).join('');
+      paintDots(box);
+      $('[data-pick-sum]', box).innerHTML = `<span class="cart-img"><img src="${s.v.photo}" alt="" width="1100" height="1100"></span>
+        <span><b>${lineName(s)}</b><em class="price-big">${M.fmt(s.v.price)}</em>${s.v.old ? ` <s class="price-old">${M.fmt(s.v.old)}</s>` : ''}</span>`;
+      $('[data-consult]', box).dataset.consult = keyOf(s);
+      // після перемальовування фокус лишається на тому ж перемикачі (для клавіатури)
+      if (refocus) { const i = box.querySelector(`input[name="${refocus}"]:checked`); if (i) i.focus({ preventScroll: true }); refocus = ''; }
       sync();
     }
-    box.addEventListener('click', (e) => {
-      const li = e.target.closest('[data-k]');
-      if (e.target.closest('[data-cart-more]')) { e.preventDefault(); toConfigurator(); return; }
-      if (!li) return;
-      const line = cart.lines.find((l) => l.k === li.dataset.k);
-      const q = e.target.closest('[data-q]');
-      if (q) line.n = clampQty(line.n + +q.dataset.q);
-      else if (e.target.closest('[data-del]')) cart.lines = cart.lines.filter((l) => l !== line);
-      else return;
-      cart.auto = false;
-      cartChanged();
+    box.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!/^p_/.test(t.name)) return;
+      refocus = t.name;
+      if (t.name === 'p_cat') select(t.value);
+      else if (t.name === 'p_size') select(state.cat.id, t.value);
+      else select(state.cat.id, state.size.id, t.value);
     });
 
     // Поля доставки підлаштовуються під перевізника; Укрпошта — лише з передоплатою
     function sync() {
-      const sum = cartSum();
+      const sum = state.v.price;
       const delivery = radio('delivery');
       const cod = form.querySelector('input[name="payment"][value="cod"]');
       if (cod) {
@@ -465,17 +335,17 @@
       }
       const total = $('[data-order-total]', form);
       if (total) {
-        const n = cartCount(), pay = radio('payment');
-        total.innerHTML = !n ? '' : `До сплати: <b>${M.fmt(sum)}</b>` + (n > 1 ? ` за ${n} шт.` : '') +
+        const pay = radio('payment');
+        total.innerHTML = `До сплати: <b>${M.fmt(sum)}</b>` +
           (pay === 'cod' ? `<br><span>Плюс комісія Нової Пошти при отриманні, приблизно ${M.fmt(NP_FEE(sum))}</span>`
             : pay === 'prepay' ? '<br><span>Реквізити для оплати надішлемо після підтвердження</span>' : '');
       }
     }
-    cartListeners.push(drawCart);
+    listeners.push(drawPick);
     form.addEventListener('change', sync);
     // змінили перевізника — оновлюємо підказку під полем відділення, якщо там була помилка
     form.addEventListener('change', (e) => { if (e.target.name === 'delivery' && f.branch.hasAttribute('aria-invalid')) f.branch.dispatchEvent(new Event('input')); });
-    drawCart();
+    drawPick(state);
 
     /* Нова Пошта: місто й відділення обираються зі списку, щоб не було помилок в адресі.
        Якщо довідник недоступний (npDown), поля працюють як звичайний текст. */
@@ -540,18 +410,13 @@
       e.preventDefault();
       const val = (k) => (f[k] && f[k].value.trim()) || '';
       const err = $('[data-order-error]', form);
-      if (!cart.lines.length) {
-        err.textContent = 'Кошик порожній: додайте хоча б одну модель.';
-        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
       const valid = check();
       err.textContent = valid ? '' : 'Перевірте поля, позначені червоним.';
       if (!valid) return;
 
       const btn = $('button[type="submit"]', form);
       btn.disabled = true;
-      const items = cartItems(), sum = cartSum(), event = cartEvent();
+      const items = [{ ...state, n: 1 }], sum = state.v.price, event = item();
       const dl = form.querySelector('input[name="delivery"]:checked');
       const pl = form.querySelector('input[name="payment"]:checked');
       const eventId = M.newEventId();
@@ -571,9 +436,6 @@
         showThanks(items, sum, val('name'), pl ? pl.value : '');
         form.classList.add('is-sent');
         $('[data-order-ok]', form).hidden = false;
-        cart.lines = [];
-        cart.auto = false;
-        cartChanged();
       } catch (x) {
         err.textContent = (x.message && !/^order /.test(x.message) ? x.message + '. ' : 'Не вдалося надіслати. ') + 'Спробуйте ще раз за хвилину.';
         btn.disabled = false;
@@ -634,36 +496,61 @@
     show($('[data-use-tab]', root).dataset.useTab);
   }
 
-  /* ---------- Кнопки «Замовити цю» ведуть до форми ---------- */
-  // Кнопки «Обрати кубик / борд»: перемикають категорію і ведуть до конструктора
+  /* ---------- Консультація: ім'я й телефон → Telegram, консультант передзвонює ---------- */
+  function mountConsult(dlg) {
+    const form = $('form[data-consult-form]', dlg), f = form.elements;
+    const about = $('[data-consult-about]', dlg), ok = $('[data-consult-ok]', dlg), err = $('[data-consult-error]', dlg);
+    let about_ = '';
+    M.phoneMask(f.cphone);
+    M.lettersOnly(f.cname);
+    const check = M.validate(form, {
+      cname: (v) => (!v ? 'Вкажіть, як до вас звертатися.' : ''),
+      cphone: (v) => !v || v === '+380' ? 'Вкажіть номер телефону.'
+        : !M.phoneValid(v) ? 'Номер неповний: потрібно +380 і ще 9 цифр.' : '',
+    });
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-consult]');
+      if (!b) return;
+      e.preventDefault();
+      const it = b.dataset.consult && byKey(b.dataset.consult);
+      about_ = it ? lineName(it) : '';
+      about.textContent = about_ ? `Ви дивились: ${about_}` : '';
+      about.hidden = !about_;
+      form.hidden = false;
+      ok.hidden = true;
+      err.textContent = '';
+      $('button[type="submit"]', form).disabled = false;
+      dlg.showModal();
+    });
+    $('[data-consult-close]', dlg).addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!check()) return;
+      const btn = $('button[type="submit"]', form);
+      btn.disabled = true;
+      const eventId = M.newEventId();
+      try {
+        await post({ type: 'consult', event_id: eventId, name: f.cname.value.trim(), phone: f.cphone.value, item: about_, text: f.ctext.value.trim(), website: f.website.value });
+        M.track('Lead', { content_name: about_ || 'Консультація' }, eventId, { ph: f.cphone.value.replace(/\D/g, ''), country: 'ua' });
+        form.hidden = true;
+        ok.hidden = false;
+        f.ctext.value = '';
+      } catch (x) {
+        err.textContent = 'Не вдалося надіслати. Спробуйте ще раз за хвилину.';
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // Кнопки «Замовити» з готовою моделлю (data-order-item="cube|23|pink") ведуть одразу до форми
   document.addEventListener('click', (e) => {
-    const a = e.target.closest('[data-goto-cat]');
+    const a = e.target.closest('[data-order-item]');
     if (!a) return;
     e.preventDefault();
-    select(a.dataset.gotoCat);
-    toConfigurator();
-  });
-
-  // Інші посилання на конструктор («Змінити модель», футер, «Обрати розмір») — так само до фото
-  document.addEventListener('click', (e) => {
-    const a = e.target.closest('a[href="#configurator"]:not([data-goto-cat]):not(.skip)');
-    if (!a || !$('[data-cfg]')) return;
-    e.preventDefault();
-    toConfigurator();
-  });
-
-  document.addEventListener('click', (e) => {
-    const add = e.target.closest('[data-add]');
-    if (add) { cartAdd(keyOf(state)); return; }
-    const a = e.target.closest('[data-buy]');
-    if (!a) return;
-    const f = $('#order');
-    if (!f) return;
-    e.preventDefault();
-    if ('addThis' in a.dataset) cartAdd(keyOf(state));
-    checkout();
-    f.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    setTimeout(() => { const i = $('input[name="name"]', f); i && i.focus({ preventScroll: true }); }, 500);
+    const [c, s, v] = a.dataset.orderItem.split('|');
+    select(c, s, v);
+    goOrder();
   });
 
   /* ---------- Поява секцій (частинами, з затримкою) ---------- */
@@ -693,14 +580,14 @@
 
   document.documentElement.classList.add('js');
   window.addEventListener('DOMContentLoaded', () => {
-    $$('[data-cfg]').forEach(mountConfigurator);
-    $$('[data-pricelist]').forEach(mountPricelist);
+    $$('[data-catalog]').forEach(mountCatalog);
     $$('form[data-order]').forEach(mountOrder);
     $$('[data-fade]').forEach(mountCrossfade);
     $$('[data-gallery]').forEach(mountGallery);
     $$('[data-reviews]').forEach(mountReviews);
     $$('form[data-review]').forEach(mountReviewForm);
     $$('[data-use]').forEach(mountUse);
+    $$('[data-consult-dlg]').forEach(mountConsult);
     $$('[data-art]').forEach((n) => {
       const [c, s, v] = n.dataset.art.split('|');
       const it = M.ITEMS.find((x) => x.cat.id === c && x.size.id === s && x.v.id === v);

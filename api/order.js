@@ -5,6 +5,7 @@
    type: 'order' — замовлення (дані отримувача, доставка, оплата)
    type: 'review' — відгук з форми «Залиште відгук»
    type: 'question' — питання зі сторінки «Контакти»
+   type: 'consult' — запит на консультацію (ім'я, телефон, яким товаром цікавились)
    Meta Conversions API (необов'язково, вмикається, коли задані обидві змінні):
      META_PIXEL_ID     — ID пікселя (той самий, що в shared/track.js)
      META_CAPI_TOKEN   — токен з Events Manager → Налаштування → Conversions API
@@ -80,6 +81,19 @@ function questionMessage(b) {
   ].join('\n');
 }
 
+function consultMessage(b, phone) {
+  return [
+    '📞 <b>Запит на консультацію</b>',
+    '',
+    `👤 ${esc(b.name)}`,
+    `📞 <a href="tel:${esc(phone)}">${esc(phone)}</a>`,
+    b.item ? `📦 Дивились: ${esc(b.item)}` : null,
+    b.text ? `\n💬 ${esc(b.text)}` : null,
+    '',
+    'Передзвоніть клієнту найближчим часом.',
+  ].filter((x) => x !== null).join('\n');
+}
+
 /* ---------- Meta Conversions API: те саме замовлення з сервера, з тим самим event_id, що й піксель ---------- */
 const sha = (v) => createHash('sha256').update(String(v).trim().toLowerCase()).digest('hex');
 const cookie = (req, name) => (String(req.headers.cookie || '').match(new RegExp('(?:^|; )' + name + '=([^;]*)')) || [])[1];
@@ -103,7 +117,7 @@ async function sendToMeta(req, b, phone) {
   if (b.city) user_data.ct = [sha(String(b.city).replace(/\s+/g, ''))];
 
   const items = orderItems(b);
-  const event = b.type === 'question'
+  const event = b.type === 'question' || b.type === 'consult'
     ? { event_name: 'Lead' }
     : { event_name: 'Purchase', custom_data: {
         currency: 'UAH',
@@ -158,6 +172,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'Вкажіть ім’я, контакт і питання' });
     }
     text = questionMessage(b);
+  } else if (b.type === 'consult') {
+    phone = String(b.phone || '').replace(/[^\d+]/g, '');
+    if (!b.name || phone.length < 10) {
+      return res.status(400).json({ ok: false, error: 'Вкажіть ім’я і телефон' });
+    }
+    text = consultMessage(b, phone);
   } else if (b.type === 'review') {
     if (!b.name || String(b.text || '').trim().length < 10) {
       return res.status(400).json({ ok: false, error: 'Вкажіть ім’я і текст відгуку' });
@@ -192,7 +212,7 @@ export default async function handler(req, res) {
     console.error('Telegram error', tg.status, await tg.text());
     return res.status(502).json({ ok: false, error: 'Не вдалося надіслати, спробуйте ще раз' });
   }
-  if (b.type === 'order') await sendToMeta(req, b, phone);
+  if (b.type === 'order' || b.type === 'consult') await sendToMeta(req, b, phone);
   else if (b.type === 'question') await sendToMeta(req, b, /^\+?[\d\s()-]{10,}$/.test(String(b.contact || '')) ? String(b.contact) : '');
   return res.status(200).json({ ok: true });
 }
