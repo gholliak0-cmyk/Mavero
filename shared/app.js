@@ -243,8 +243,24 @@
         return t;
       }));
     }
-    filters.addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; render(); } });
+    // Стрічка гортається свайпом (scroll-snap), на комп'ютері — стрілками; лічильник «1–4 з 20»
+    const prev = $('[data-gal-prev]', root), next = $('[data-gal-next]', root), count = $('[data-gal-count]', root);
+    const gap = () => parseFloat(getComputedStyle(grid).columnGap) || 0;
+    const step = () => (grid.firstElementChild ? grid.firstElementChild.offsetWidth + gap() : grid.clientWidth);
+    function sync() {
+      const n = grid.children.length, w = step(), first = Math.round(grid.scrollLeft / w);
+      const seen = Math.max(1, Math.floor((grid.clientWidth + gap() + 1) / w)), last = Math.min(n, first + seen);
+      count.textContent = n ? `${first + 1}${last > first + 1 ? '–' + last : ''} з ${n}` : '';
+      prev.disabled = grid.scrollLeft < 4;
+      next.disabled = grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 4;
+    }
+    prev.addEventListener('click', () => grid.scrollBy({ left: -step() }));
+    next.addEventListener('click', () => grid.scrollBy({ left: step() }));
+    grid.addEventListener('scroll', () => requestAnimationFrame(sync), { passive: true });
+    addEventListener('resize', sync);
+    filters.addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; render(); grid.scrollLeft = 0; sync(); } });
     render();
+    sync();
   }
 
   /* ---------- Відгуки з даних (REVIEWS у products.js) ---------- */
