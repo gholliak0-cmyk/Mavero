@@ -230,14 +230,17 @@
     function render() {
       const list = shots.filter((x) => kind === 'all' || x.kind === kind);
       filters.replaceChildren(...kinds.map(([k, t]) => chip(`${t} · ${k === 'all' ? shots.length : shots.filter((x) => x.kind === k).length}`, k === kind, { kind: k })));
+      // Плитка = фото (тап — переглянути всі кадри) + назва, ціна й кнопка «Замовити», видимі завжди
       grid.replaceChildren(...list.map((x) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'g-tile';
-        const more = x.slides.length > 1 ? `<span class="g-more">+${x.slides.length - 1} фото</span>` : '';
-        b.innerHTML = `<img src="${x.src}" alt="${x.alt}" width="1100" height="1100" loading="lazy">${more}<span class="g-cap">${x.title}${x.price ? ` <b>${M.fmt(x.price)}</b>${x.old ? ` <s>${M.fmt(x.old)}</s>` : ''}` : ''}</span>`;
-        b.addEventListener('click', () => open(x.slides, 0));
-        return b;
+        const t = document.createElement('article');
+        t.className = 'g-tile';
+        const n = x.slides.length;
+        t.innerHTML = `<button type="button" class="g-photo" aria-label="Переглянути фото: ${x.title}"><img src="${x.src}" alt="${x.alt}" width="1100" height="1100" loading="lazy"><span class="g-more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg>${n > 1 ? `Дивитись ${n} фото` : 'Збільшити'}</span></button>
+          <div class="g-info"><h3>${x.title}</h3><p><b>${M.fmt(x.price)}</b>${x.old ? ` <s>${M.fmt(x.old)}</s>` : ''}</p>
+          <button type="button" class="btn g-order">Замовити</button></div>`;
+        $('.g-photo', t).addEventListener('click', () => open(x.slides, 0));
+        $('.g-order', t).addEventListener('click', () => { const [c, s, v] = x.pick.split('|'); orderItem(c, s, v); });
+        return t;
       }));
     }
     filters.addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; render(); } });

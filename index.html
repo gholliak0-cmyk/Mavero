@@ -178,15 +178,20 @@ body{background:var(--bg);color:var(--ink)}
 .gal h2{font-size:var(--s-h2);font-weight:800;letter-spacing:-.03em;line-height:1}
 .gal-top p{font-size:var(--s-body);margin-top:16px;max-width:44ch}
 .gal-filters{display:flex;flex-wrap:wrap;gap:8px}
-.gal-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:40px}
-.g-tile{position:relative;aspect-ratio:1/1;overflow:hidden;padding:0;background:var(--surface);text-align:left}
-.g-more{position:absolute;right:8px;top:8px;padding:4px 8px;background:rgba(13,14,11,.78);color:var(--ink);font-size:13px;font-weight:700}
-.g-tile img{width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease)}
-.g-tile:hover img{transform:scale(1.04)}
-.g-cap{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;background:rgba(13,14,11,.84);color:var(--ink);font-size:var(--s-small);line-height:1.3;transform:translateY(101%);transition:transform .3s var(--ease)}
-.g-cap b{color:var(--accent);white-space:nowrap;font-size:20px}
-.g-cap s{color:var(--muted);white-space:nowrap}
-.g-tile:hover .g-cap,.g-tile:focus-visible .g-cap{transform:none}
+.gal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 12px;margin-top:40px}
+.g-tile{display:flex;flex-direction:column;background:var(--surface)}
+.g-photo{position:relative;display:block;width:100%;aspect-ratio:1/1;overflow:hidden;padding:0;background:var(--surface-2);cursor:zoom-in}
+.g-photo img{width:100%;height:100%;object-fit:cover;pointer-events:none;transition:transform .6s var(--ease)}
+.g-photo:hover img{transform:scale(1.04)}
+.g-more{position:absolute;left:8px;bottom:8px;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(13,14,11,.8);color:var(--ink);font-size:13px;font-weight:700}
+.g-more svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+.g-info{display:flex;flex-direction:column;flex:1;padding:12px 12px 14px}
+.g-info h3{font-size:var(--s-body);font-weight:700;line-height:1.3}
+.g-info p{margin:6px 0 12px;flex:1}
+.g-info b{color:var(--accent);font-size:20px;font-weight:800;white-space:nowrap}
+.g-info s{color:var(--muted);white-space:nowrap;margin-left:6px}
+.g-order{width:100%;min-height:44px}
+.reviews.no-reviews{display:none}
 .lb{--lb-h:min(74svh,760px);border:0;padding:0;background:var(--bg);color:var(--ink);width:min(92vw,880px);max-height:94svh;overflow:auto;margin:3svh auto auto}
 .lb::backdrop{background:rgba(13,14,11,.9)}
 /* висота фото однакова для всіх кадрів, а стрілки стоять на фото — нікуди не з'їжджають */
@@ -200,8 +205,11 @@ body{background:var(--bg);color:var(--ink)}
 .lb-nav{min-width:44px;min-height:44px;background:var(--surface-2);color:var(--ink);font-size:var(--s-lead);font-weight:800}
 .lb-nav:hover{background:#30342A}
 @media (max-width:820px){
-  .gal-grid{grid-template-columns:repeat(2,1fr)}
-  .g-cap{transform:none;padding:8px 10px}
+  .gal-grid{grid-template-columns:repeat(2,1fr);gap:12px 8px}
+  .g-info{padding:10px 10px 12px}
+  .g-info h3{font-size:15px}
+  .g-info b{font-size:18px}
+  .g-more{font-size:12px;padding:5px 8px}
   .lb-bar .btn{width:100%}
 }
 
@@ -332,7 +340,7 @@ body{background:var(--bg);color:var(--ink)}
 .cart-line.is-active{outline-color:var(--accent)}
 .cart-photo{position:relative;width:88px;height:88px;background:var(--surface-2);overflow:hidden;cursor:zoom-in}
 .cart-photo img{width:100%;height:100%;object-fit:cover}
-.cart-photo .g-more{right:4px;top:auto;bottom:4px;font-size:11px;padding:2px 6px}
+.cart-photo .g-more{left:auto;right:4px;top:auto;bottom:4px;font-size:11px;padding:2px 6px}
 .cart-info b{display:block;font-size:var(--s-body);line-height:1.3}
 .cart-info .price-big{font-size:26px}
 .cart-info small{display:block;font-size:14px;color:var(--muted)}
@@ -491,74 +499,10 @@ body{background:var(--bg);color:var(--ink)}
   <noscript><p>Увімкніть JavaScript, щоб оформити замовлення.</p></noscript>
 </section>
 
-<section class="use" aria-labelledby="use-h" data-use>
-  <h2 class="sr" id="use-h">Чим корисні бізікубик і бізіборд</h2>
-  <div class="use-tabs" role="group" aria-label="Опис для"><button type="button" class="chip" data-use-tab="cube" aria-pressed="true">Бізікубик</button><button type="button" class="chip" data-use-tab="board" aria-pressed="false">Бізіборд</button></div>
-  <div class="use-panel" data-use-panel="cube">
-  <div class="use-head" data-reveal>
-    <h3 class="use-title">Чим корисний бізікубик</h3>
-    <p>Це набір побутових дрібниць, які дитина й так хоче смикати: засуви, вимикачі, застібки. Тільки зібраних в одному безпечному місці, де все можна.</p>
-    <img src="/assets/img/p/cube-30-multi.jpg" alt="Різнобарвний бізікубик 30 см з ксилофоном, шестернями й дверцятами" width="1100" height="1100" loading="lazy">
-  </div>
-  <ol class="use-list" data-reveal>
-    <li><h3>Дрібна моторика</h3><p>Крутити шестерні, тягнути засув, вставляти вилку в розетку: пальці стають спритнішими, а це знадобиться і для ложки, і для олівця.</p></li>
-    <li><h3>Логіка «дію — бачу результат»</h3><p>Натиснула вимикач — клацнуло, відсунула засув — дверцята відчинились. Так малюк розуміє причину й наслідок.</p></li>
-    <li><h3>Нові слова й поняття</h3><p>Кольори, літери, цифри, «відчини — зачини», «котра година». Є про що говорити разом із дитиною.</p></li>
-    <li><h3>Самостійність</h3><p>Липучки, блискавка, ремінці як на одязі та взутті. Потренувавшись на кубику, дитина швидше вдягається сама.</p></li>
-    <li><h3>Увага й посидючість</h3><p>Лабіринт і сортер вимагають довести справу до кінця. Так дитина вчиться не кидати почате.</p></li>
-    <li><h3>Гра без екрана</h3><p>Заняття на 15–20 хвилин без мультиків, поки ви п’єте каву поруч. Кубик не розряджається, а складніші зони стають цікавими, коли дитина підростає.</p></li>
-  </ol>
-  </div>
-  <div class="use-panel" data-use-panel="board" hidden>
-  <div class="use-head">
-    <h3 class="use-title">Чим корисний бізіборд</h3>
-    <p>Велика дошка, де всі заняття видно одразу. Її можна покласти на підлогу або закріпити на стіні в дитячій, і вона не займає місця.</p>
-    <img src="/assets/img/p/board-40x50-rocket-kid1.jpg" alt="Малюк грається бізібордом «Ракета і робот» на килимі" width="1100" height="1100" loading="lazy">
-  </div>
-  <ol class="use-list">
-    <li><h3>Усе перед очима</h3><p>Дитина бачить усі елементи одразу й сама обирає, з чим гратися: від ксилофона до лабіринту, без перевертань і пошуків.</p></li>
-    <li><h3>Перші літери й цифри</h3><p>На бордах є українські літери, цифри, годинник зі стрілками й світлофор. Це привід вчити назви й рахувати разом.</p></li>
-    <li><h3>Побутові навички</h3><p>Розетка з вилкою, вимикач, засувка, черевичок із застібками: безпечна репетиція того, що є вдома.</p></li>
-    <li><h3>Моторика обох рук</h3><p>Однією рукою тримати, другою крутити шестерню чи вести намистину лабіринтом. Так руки вчаться працювати разом.</p></li>
-    <li><h3>Росте разом з дитиною</h3><p>Малюк спершу клацає й стукає по ксилофону, а згодом складає сортер, проходить лабіринти й ставить стрілки годинника.</p></li>
-    <li><h3>Можна повісити на стіну</h3><p>Борд не валяється під ногами й не займає підлогу. Повісьте на рівні дитини, і вона повертатиметься до нього сама.</p></li>
-  </ol>
-  </div>
-</section>
-
-<section class="feat" aria-labelledby="feat-h">
-  <div class="feat-shape"><img src="/assets/img/DSC03869.jpg" alt="Дитина сидить у кріслі поруч з рожевим бізікубиком" width="1600" height="1066" loading="lazy"></div>
-  <div class="feat-body" data-reveal>
-    <h2 id="feat-h">Що на гранях</h2>
-    <div class="feat-grid">
-      <div><h3>Розетка з вилкою</h3><p>Безпечно вставляти й виймати: дитина вчиться без справжньої розетки.</p></div>
-      <div><h3>Засув і шпінгалет</h3><p>Тренують пальці й силу кисті, а дверцята відчиняються.</p></div>
-      <div><h3>Ксилофон</h3><p>Перші звуки й ритм, паличка в комплекті.</p></div>
-      <div><h3>Годинник</h3><p>Стрілки крутяться, можна вчити «котра година».</p></div>
-      <div><h3>Лабіринт</h3><p>Веде намистину по доріжці: координація рук і очей.</p></div>
-      <div><h3>Лічниця</h3><p>Кульки для рахунку до десяти й назв кольорів.</p></div>
-      <div><h3>Застібки</h3><p>Липучки, ремінці, блискавка: як на одязі та взутті.</p></div>
-      <div><h3>«Хто що їсть?»</h3><p>Гра з картинками на логіку й нові слова.</p></div>
-      <div><h3>Вимикач і світлофор</h3><p>Клацати можна скільки завгодно, а кольори легко запам’ятати.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="show" aria-labelledby="show-h">
-  <img src="/assets/img/DSC03874.jpg" alt="Дитина зазирає за рожевий бізікубик" width="1066" height="1600" loading="lazy">
-  <div class="show-card" data-reveal>
-    <h2 id="show-h">Рожевий бізікубик</h2>
-    <p>Чотири кольори на вибір, три розміри</p>
-    <p><b>від 949 грн</b></p>
-    <img src="/assets/img/DSC03870.jpg" alt="Рожевий бізікубик цілком" width="1066" height="1600" loading="lazy">
-    <a class="btn" href="#order" data-order-item="cube|23|pink">Замовити рожевий</a>
-  </div>
-</section>
-
 <section class="gal" id="gallery" aria-labelledby="gal-h" data-gallery>
   <div class="gal-top" data-reveal>
-    <div><h2 id="gal-h">Галерея моделей</h2>
-    <p>Усі моделі з прайсу. Натисніть на фото, щоб погортати всі кадри моделі, зокрема з дітьми, і замовити її.</p></div>
+    <div><h2 id="gal-h">Усі моделі</h2>
+    <p>Натисніть на фото, щоб побачити всі кадри моделі. Сподобалась — тисніть «Замовити» під фото.</p></div>
     <div class="gal-filters" role="group" aria-label="Що показати" data-gallery-filters></div>
   </div>
   <div class="gal-grid" data-gallery-grid></div>
@@ -573,6 +517,37 @@ body{background:var(--bg);color:var(--ink)}
       <button type="button" class="lb-nav lb-close" data-lb-close aria-label="Закрити">×</button>
     </div>
   </dialog>
+</section>
+
+<section class="use" aria-labelledby="use-h" data-use>
+  <h2 class="sr" id="use-h">Чим корисні бізікубик і бізіборд</h2>
+  <div class="use-tabs" role="group" aria-label="Опис для"><button type="button" class="chip" data-use-tab="cube" aria-pressed="true">Бізікубик</button><button type="button" class="chip" data-use-tab="board" aria-pressed="false">Бізіборд</button></div>
+  <div class="use-panel" data-use-panel="cube">
+  <div class="use-head" data-reveal>
+    <h3 class="use-title">Чим корисний бізікубик</h3>
+    <p>Це набір побутових дрібниць, які дитина й так хоче смикати: засуви, вимикачі, застібки. Тільки зібраних в одному безпечному місці, де все можна.</p>
+    <img src="/assets/img/p/cube-30-multi.jpg" alt="Різнобарвний бізікубик 30 см з ксилофоном, шестернями й дверцятами" width="1100" height="1100" loading="lazy">
+  </div>
+  <ol class="use-list" data-reveal>
+    <li><h3>Дрібна моторика</h3><p>Крутити шестерні, тягнути засув, вставляти вилку в розетку: пальці стають спритнішими, а це знадобиться і для ложки, і для олівця.</p></li>
+    <li><h3>Логіка «дію — бачу результат»</h3><p>Натиснула вимикач — клацнуло, відсунула засув — дверцята відчинились. Так малюк розуміє причину й наслідок.</p></li>
+    <li><h3>Нові слова й поняття</h3><p>Кольори, літери, цифри, «відчини — зачини», «котра година». Є про що говорити разом із дитиною.</p></li>
+    <li><h3>Гра без екрана</h3><p>Заняття на 15–20 хвилин без мультиків, поки ви п’єте каву поруч. Кубик не розряджається, а складніші зони стають цікавими, коли дитина підростає.</p></li>
+  </ol>
+  </div>
+  <div class="use-panel" data-use-panel="board" hidden>
+  <div class="use-head">
+    <h3 class="use-title">Чим корисний бізіборд</h3>
+    <p>Велика дошка, де всі заняття видно одразу. Її можна покласти на підлогу або закріпити на стіні в дитячій, і вона не займає місця.</p>
+    <img src="/assets/img/p/board-40x50-rocket-kid1.jpg" alt="Малюк грається бізібордом «Ракета і робот» на килимі" width="1100" height="1100" loading="lazy">
+  </div>
+  <ol class="use-list">
+    <li><h3>Усе перед очима</h3><p>Дитина бачить усі елементи одразу й сама обирає, з чим гратися: від ксилофона до лабіринту, без перевертань і пошуків.</p></li>
+    <li><h3>Перші літери й цифри</h3><p>На бордах є українські літери, цифри, годинник зі стрілками й світлофор. Це привід вчити назви й рахувати разом.</p></li>
+    <li><h3>Моторика обох рук</h3><p>Однією рукою тримати, другою крутити шестерню чи вести намистину лабіринтом. Так руки вчаться працювати разом.</p></li>
+    <li><h3>Можна повісити на стіну</h3><p>Борд не валяється під ногами й не займає підлогу. Повісьте на рівні дитини, і вона повертатиметься до нього сама.</p></li>
+  </ol>
+  </div>
 </section>
 
 <section class="why" aria-labelledby="why-h">
@@ -603,34 +578,6 @@ body{background:var(--bg);color:var(--ink)}
     <p class="form-err" data-review-error aria-live="assertive"></p>
     <p class="form-ok" data-review-ok hidden tabindex="-1">Дякуємо! Відгук з’явиться на сайті після перевірки.</p>
   </form>
-</section>
-
-<section class="verbs" aria-labelledby="verbs-h">
-  <h2 id="verbs-h" data-reveal><span>Як замовити</span></h2>
-  <div class="steps">
-    <div class="step"><div class="step-img"><img src="/assets/img/DSC03870.jpg" alt="" width="1066" height="1600" loading="lazy"><span class="step-n">1</span></div>
-      <div class="step-text"><h3>Обирайте</h3><p>Натисніть «Замовити», виберіть розмір і колір та вкажіть дані для доставки.</p></div></div>
-    <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 64 24"><path d="M2 12H56" stroke-dasharray="5 6"/><path d="M48 4l9 8-9 8"/></svg></span>
-    <div class="step"><div class="step-img"><img src="/assets/img/DSC04410.jpg" alt="" width="1066" height="1600" loading="lazy"><span class="step-n">2</span></div>
-      <div class="step-text"><h3>Чекайте підтвердження</h3><p>Ми напишемо вам, звіримо модель, адресу доставки й спосіб оплати.</p></div></div>
-    <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 64 24"><path d="M2 12H56" stroke-dasharray="5 6"/><path d="M48 4l9 8-9 8"/></svg></span>
-    <div class="step"><div class="step-img"><img src="/assets/img/DSC03875.jpg" alt="" width="1066" height="1600" loading="lazy"><span class="step-n">3</span></div>
-      <div class="step-text"><h3>Отримуйте й грайтеся</h3><p>З накладеним платежем огляньте іграшку на пошті й платіть, якщо все подобається.</p></div></div>
-  </div>
-</section>
-
-<section class="ship" id="delivery" aria-labelledby="ship-h">
-  <h2 id="ship-h" data-reveal><span>Доставка й оплата</span></h2>
-  <div class="ship-col" data-reveal>
-    <h3>Доставка</h3>
-    <div class="ship-row"><b>Нова Пошта</b><span>1–2 дні</span><p>У середньому, у відділення, поштомат або кур’єром.</p></div>
-    <div class="ship-row"><b>Укрпошта</b><span>3–10 днів</span><p>Лише з передоплатою, без накладеного платежу.</p></div>
-  </div>
-  <div class="ship-col" data-reveal>
-    <h3>Оплата</h3>
-    <div class="ship-row"><b>Накладений платіж</b><span>на пошті</span><p>Платите після огляду. Нова Пошта бере комісію: 20 грн + 2% від суми.</p></div>
-    <div class="ship-row"><b>Повна передоплата</b><span>без комісії</span><p>На картку, реквізити надішлемо після підтвердження замовлення.</p></div>
-  </div>
 </section>
 
 <section class="faq" aria-labelledby="faq-h">
@@ -748,7 +695,7 @@ body{background:var(--bg);color:var(--ink)}
     </div>
     <ul>
       <li><a href="#catalog">Каталог</a></li>
-      <li><a href="#gallery">Галерея</a></li>
+      <li><a href="#gallery">Усі моделі</a></li>
       <li><a href="#order">Оформити замовлення</a></li>
       <li><a href="/dostavka">Доставка й оплата</a></li>
       <li><a href="/povernennya">Обмін і повернення</a></li>
@@ -763,7 +710,7 @@ body{background:var(--bg);color:var(--ink)}
 <script src="/shared/products.js" defer></script>
 <script src="/shared/track.js" defer></script>
 <script src="/shared/forms.js" defer></script>
-<script src="/shared/app.js?v=8" defer></script>
+<script src="/shared/app.js?v=9" defer></script>
 <script>
 // Плаваюча кнопка ховається, коли видно форму замовлення або футер
 addEventListener("DOMContentLoaded",()=>{const b=document.querySelector(".hero-cta"),seen=new Set();
