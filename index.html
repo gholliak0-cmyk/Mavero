@@ -408,6 +408,18 @@ body{background:var(--bg);color:var(--ink)}
 .ac-list li b{color:var(--ink)}
 .ac-list [aria-selected="true"],.ac-list [role="option"]:hover{background:var(--surface-2)}
 .ac-list .ac-none{color:var(--muted);cursor:default}
+/* банер акції на початку форми */
+.promo{position:relative;margin-bottom:32px;padding:20px 22px 18px;background:var(--accent);color:var(--accent-ink)}
+.promo-tag{display:inline-block;padding:4px 10px;background:var(--accent-ink);color:var(--accent);font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.promo-h{margin-top:12px;font-size:var(--s-lead);font-weight:800;line-height:1.15;letter-spacing:-.02em}
+.promo-h b{white-space:nowrap}
+.promo-sub{margin-top:8px;font-size:var(--s-small);line-height:1.45}
+.promo-perks{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;padding:0;list-style:none;font-size:var(--s-small);font-weight:700}
+.promo-perks li::before{content:"✓ "}
+.opts-v .opt-price .price-big{font-size:18px}
+.opts-v .opt-price .price-old{display:block;margin:2px 0 0}
+.order-total s{margin-left:8px;color:var(--muted)}
+.order-total .save{color:var(--accent);font-weight:700;font-size:var(--s-body)}
 .order-total{font-size:var(--s-body);margin:8px 0 16px;line-height:1.5}
 .order-total b{font-size:28px;color:var(--accent)}
 .order-total span{font-size:var(--s-small);color:var(--muted)}
@@ -607,6 +619,12 @@ body{background:var(--bg);color:var(--ink)}
 <section class="order" id="order" aria-labelledby="order-h">
   <div class="order-photo"><img src="/assets/img/DSC04410.jpg" alt="Хлопчик тягне сірий бізікубик за шнурок" width="1066" height="1600" loading="lazy"></div>
   <form class="order-form" data-order novalidate>
+    <div class="promo" data-promo>
+      <span class="promo-tag">Акція</span>
+      <p class="promo-h">Знижка до <b data-promo-max>700 грн</b> на кожну іграшку</p>
+      <p class="promo-sub">Ціни нижче вже зі знижкою. Оплачуєте на пошті після огляду, без передоплати.</p>
+      <ul class="promo-perks"><li>Відправка за 1–2 дні</li><li>Оплата при отриманні</li><li>14 днів на повернення</li></ul>
+    </div>
     <h2 id="order-h">Оформіть замовлення</h2>
     <fieldset class="pick" data-pick aria-labelledby="fsp"><h3 class="fs-title" id="fsp" data-pick-title>Що замовляєте</h3>
       <div class="opts opts-2" role="radiogroup" aria-label="Товар" data-pick-cat></div>
@@ -716,7 +734,7 @@ body{background:var(--bg);color:var(--ink)}
 <script src="/shared/products.js" defer></script>
 <script src="/shared/track.js" defer></script>
 <script src="/shared/forms.js" defer></script>
-<script src="/shared/app.js?v=11" defer></script>
+<script src="/shared/app.js?v=12" defer></script>
 <script>
 // Плаваюча кнопка ховається, коли видно форму замовлення або футер
 addEventListener("DOMContentLoaded",()=>{const b=document.querySelector(".hero-cta"),seen=new Set();

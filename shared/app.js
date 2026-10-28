@@ -54,8 +54,8 @@
   // Ціна біля розміру: одна ціна або «від …», якщо моделі цього розміру коштують по-різному
   function sizePrice(z) {
     const ps = z.variants.map((v) => v.price), min = Math.min(...ps), same = ps.every((p) => p === min);
-    const old = same && z.variants[0].old;
-    return `<em class="price-big">${same ? '' : 'від '}${M.fmt(min)}</em>${old ? ` <s class="price-old">${M.fmt(old)}</s>` : ''}`;
+    const olds = z.variants.map((v) => v.old).filter(Boolean), old = olds.length ? Math.min(...olds) : 0;
+    return `<em class="price-big">${same ? '' : 'від '}${M.fmt(min)}</em>${old > min ? ` <s class="price-old">${same ? '' : 'від '}${M.fmt(old)}</s>` : ''}`;
   }
   // Кружечок кольору: фон ставимо через style, бо в «різнобарвного» він з лапками всередині
   const paintDots = (root) => $$('[data-sw]', root).forEach((d) => (d.style.background = M.COLOURS[d.dataset.sw].swatch));
@@ -361,7 +361,7 @@
       $('[data-pick-vlabel]', box).textContent = s.cat.id === 'cube' ? 'Колір' : 'Модель';
       $('[data-pick-v]', box).innerHTML = s.size.variants.map((v) => opt('p_v', v.id, v === s.v, s.cat.id === 'cube'
         ? `<b><i class="dot" data-sw="${v.colour}"></i>${v.name}</b>`
-        : `<img class="opt-thumb" src="${v.photo}" alt="" width="1100" height="1100" loading="lazy"><b>${v.name}</b>${M.fmt(v.price)}`)).join('');
+        : `<img class="opt-thumb" src="${v.photo}" alt="" width="1100" height="1100" loading="lazy"><b>${v.name}</b><i class="opt-price"><em class="price-big">${M.fmt(v.price)}</em>${v.old ? ` <s class="price-old">${M.fmt(v.old)}</s>` : ''}</i>`)).join('');
       paintDots(box);
       $('[data-pick-title]', box).textContent = cart.lines.length > 1 ? `Товар ${cart.at + 1} з ${cart.lines.length}: розмір і колір` : 'Що замовляєте';
       $('[data-consult]', box).dataset.consult = keyOf(s);
@@ -436,7 +436,9 @@
       const total = $('[data-order-total]', form);
       if (total) {
         const pay = radio('payment'), n = cartCount();
-        total.innerHTML = `До сплати: <b>${M.fmt(sum)}</b>` + (n > 1 ? ` за ${n} шт.` : '') +
+        const old = cartItems().reduce((a, x) => a + (x.v.old || x.v.price) * x.n, 0);
+        total.innerHTML = `До сплати: <b>${M.fmt(sum)}</b>${old > sum ? `<s>${M.fmt(old)}</s>` : ''}` + (n > 1 ? ` за ${n} шт.` : '') +
+          (old > sum ? `<br><span class="save">Ваша знижка: ${M.fmt(old - sum)}</span>` : '') +
           (pay === 'cod' ? `<br><span>Плюс комісія Нової Пошти при отриманні, приблизно ${M.fmt(NP_FEE(sum))}</span>`
             : pay === 'prepay' ? '<br><span>Реквізити для оплати надішлемо після підтвердження</span>' : '');
       }
@@ -689,6 +691,7 @@
     $$('form[data-order]').forEach(mountOrder);
     $$('[data-fade]').forEach(mountCrossfade);
     $$('[data-gallery]').forEach(mountGallery);
+    $$('[data-promo-max]').forEach((n) => { n.textContent = M.fmt(Math.max(...M.ITEMS.map((x) => (x.v.old || x.v.price) - x.v.price))); });
     $$('[data-reviews]').forEach(mountReviews);
     $$('form[data-review]').forEach(mountReviewForm);
     $$('[data-use]').forEach(mountUse);
