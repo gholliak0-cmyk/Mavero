@@ -326,10 +326,25 @@ body{background:var(--bg);color:var(--ink)}
 .opt .dot{display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:-3px;margin-right:8px}
 .opts.opts-v{grid-template-columns:repeat(4,1fr)}
 .opt-thumb{width:100%;aspect-ratio:1/1;object-fit:cover;margin-bottom:8px;background:var(--surface)}
-.pick-sum{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:center;background:var(--surface);padding:12px;margin-top:8px}
-.pick-sum .cart-img{width:96px;height:96px}
-.pick-sum b{display:block;font-size:var(--s-body);line-height:1.3}
-.pick-sum .price-big{font-size:32px}
+/* кошик у формі */
+.cart-list{display:grid;gap:8px}
+.cart-line{display:grid;grid-template-columns:88px minmax(0,1fr) auto 44px;gap:14px;align-items:center;background:var(--surface);padding:10px;outline:2px solid transparent;outline-offset:-2px;cursor:pointer}
+.cart-line.is-active{outline-color:var(--accent)}
+.cart-photo{position:relative;width:88px;height:88px;background:var(--surface-2);overflow:hidden;cursor:zoom-in}
+.cart-photo img{width:100%;height:100%;object-fit:cover}
+.cart-photo .g-more{right:4px;top:auto;bottom:4px;font-size:11px;padding:2px 6px}
+.cart-info b{display:block;font-size:var(--s-body);line-height:1.3}
+.cart-info .price-big{font-size:26px}
+.cart-info small{display:block;font-size:14px;color:var(--muted)}
+.cart-qty{display:flex;align-items:center}
+.cart-qty button{width:36px;height:40px;background:var(--surface-2);color:var(--ink);font-size:var(--s-lead);font-weight:700}
+.cart-qty button:disabled{opacity:.35}
+.cart-qty output{min-width:34px;text-align:center;font-weight:700}
+.cart-del{width:44px;height:44px;color:var(--muted);font-size:24px}
+.cart-del:hover{color:var(--ink)}
+.cart-more{display:inline-block;margin-top:14px;min-height:40px;color:var(--ink);font-size:var(--s-body);font-weight:700;text-decoration:underline;text-underline-offset:4px}
+.cart-more:hover,.cart-more:focus-visible{color:var(--accent)}
+.order .order-consult{margin-top:8px}
 .cart-img{background:var(--surface-2);display:grid;place-items:center;overflow:hidden}
 .cart-img img{width:100%;height:100%;object-fit:cover}
 .pick-help{display:inline-block;margin-top:14px;min-height:40px;color:var(--ink);font-size:var(--s-small);font-weight:700;text-decoration:underline;text-underline-offset:4px}
@@ -339,7 +354,7 @@ body{background:var(--bg);color:var(--ink)}
 .consult form{margin-top:20px}
 .consult-about{margin-top:12px;font-size:var(--s-small);font-weight:700;color:var(--accent)}
 .consult .lb-close{position:absolute;top:8px;right:8px;background:none}
-.consult{position:relative;padding-top:48px}
+.consult{padding-top:48px}
 /* вікно «Дякуємо» */
 .thanks{border:0;padding:32px;width:min(92vw,520px);max-height:92svh;overflow:auto;background:var(--bg);color:var(--ink);text-align:center}
 .thanks::backdrop{background:rgba(13,14,11,.88)}
@@ -399,8 +414,10 @@ body{background:var(--bg);color:var(--ink)}
   .order-photo img{position:static;height:55svh}
   .opts{grid-template-columns:1fr}
   .opts.opts-v{grid-template-columns:repeat(2,1fr)}
-  .pick-sum{grid-template-columns:72px minmax(0,1fr)}
-  .pick-sum .cart-img{width:72px;height:72px}
+  .cart-line{grid-template-columns:72px minmax(0,1fr) 40px;gap:10px}
+  .cart-photo{width:72px;height:72px}
+  .cart-qty{grid-column:2}
+  .cart-del{grid-row:1;grid-column:3}
   .thanks{padding:24px 16px}
 }
 
@@ -638,13 +655,15 @@ body{background:var(--bg);color:var(--ink)}
   <div class="order-photo"><img src="/assets/img/DSC04410.jpg" alt="Хлопчик тягне сірий бізікубик за шнурок" width="1066" height="1600" loading="lazy"></div>
   <form class="order-form" data-order novalidate>
     <h2 id="order-h">Оформіть замовлення</h2>
-    <fieldset class="pick" data-pick aria-labelledby="fsp"><h3 class="fs-title" id="fsp">Що замовляєте</h3>
+    <fieldset class="pick" data-pick aria-labelledby="fsp"><h3 class="fs-title" id="fsp" data-pick-title>Що замовляєте</h3>
       <div class="opts opts-2" role="radiogroup" aria-label="Товар" data-pick-cat></div>
       <h3 class="fs-title">Розмір і ціна</h3>
       <div class="opts" role="radiogroup" aria-label="Розмір" data-pick-size></div>
       <h3 class="fs-title" data-pick-vlabel>Колір</h3>
       <div class="opts opts-v" role="radiogroup" aria-label="Колір або модель" data-pick-v></div>
-      <div class="pick-sum" data-pick-sum aria-live="polite"></div>
+      <h3 class="fs-title">Ваше замовлення</h3>
+      <ul class="cart-list" data-cart aria-label="Товари в замовленні"></ul>
+      <button type="button" class="cart-more" data-cart-more>+ Додати ще один товар</button><br>
       <button type="button" class="pick-help" data-consult>Сумніваєтесь, що обрати? Отримати консультацію</button>
     </fieldset>
     <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -674,6 +693,7 @@ body{background:var(--bg);color:var(--ink)}
     <label class="field"><span>Коментар (необов’язково)</span><textarea name="comment" rows="2" placeholder="Побажання до замовлення"></textarea></label>
     <p class="order-total" data-order-total aria-live="polite"></p>
     <button class="btn" type="submit">Оформити замовлення</button>
+    <button type="button" class="btn btn-ghost order-consult" data-consult>Є питання? Безкоштовна консультація</button>
     <p class="consent">Натискаючи кнопку, ви погоджуєтесь з <a href="/privacy">політикою конфіденційності</a>.</p>
     <p class="form-err" id="err-a" data-order-error aria-live="assertive"></p>
     <p class="form-ok" data-order-ok hidden tabindex="-1">Дякуємо! Замовлення прийняте. Ми напишемо вам, щоб підтвердити деталі.</p>
@@ -686,6 +706,17 @@ body{background:var(--bg);color:var(--ink)}
     <p class="thanks-sum">Разом: <b data-thanks-sum></b></p>
     <p class="thanks-pay" data-thanks-pay></p>
     <form method="dialog"><button class="btn">Добре</button></form>
+  </dialog>
+  <dialog class="lb" aria-label="Фото товару">
+    <div class="lb-img" data-lb-img></div>
+    <div class="lb-bar">
+      <p data-lb-cap></p>
+      <span class="zoom-count" data-lb-count></span>
+      <button type="button" class="lb-nav lb-prev" data-lb-prev aria-label="Попереднє фото">‹</button>
+      <button type="button" class="lb-nav lb-next" data-lb-next aria-label="Наступне фото">›</button>
+      <button type="button" class="btn" data-lb-pick hidden>Замовити</button>
+      <button type="button" class="lb-nav lb-close" data-lb-close aria-label="Закрити">×</button>
+    </div>
   </dialog>
   <dialog class="thanks consult" data-consult-dlg aria-labelledby="consult-h">
     <button type="button" class="lb-nav lb-close" data-consult-close aria-label="Закрити">×</button>
@@ -732,7 +763,7 @@ body{background:var(--bg);color:var(--ink)}
 <script src="/shared/products.js" defer></script>
 <script src="/shared/track.js" defer></script>
 <script src="/shared/forms.js" defer></script>
-<script src="/shared/app.js?v=7" defer></script>
+<script src="/shared/app.js?v=8" defer></script>
 <script>
 // Плаваюча кнопка ховається, коли видно форму замовлення або футер
 addEventListener("DOMContentLoaded",()=>{const b=document.querySelector(".hero-cta"),seen=new Set();
