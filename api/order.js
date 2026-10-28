@@ -30,7 +30,6 @@ function orderItems(b) {
 function orderMessage(b, phone) {
   const items = orderItems(b);
   const total = items.reduce((a, x) => a + x.price * x.qty, 0);
-  const cod = /наклад/i.test(b.payment || '');
   return [
     '🛒 <b>Нове замовлення</b>',
     '',
@@ -45,15 +44,7 @@ function orderMessage(b, phone) {
     `👤 ${esc(b.name)}`,
     `📞 <a href="tel:${esc(phone)}">${esc(phone)}</a>`,
     '',
-    '<b>Доставка</b>',
-    `🚚 ${esc(b.delivery || 'не вказано')}`,
-    `📍 ${esc(b.city || 'місто не вказано')}`,
-    `🏤 ${esc(b.branch || 'відділення не вказано')}`,
-    '',
-    '<b>Оплата</b>',
-    `💳 ${esc(b.payment || 'не вказано')}`,
-    cod ? `   комісія НП при отриманні ≈ ${money(Math.round(20 + total * 0.02))}` : null,
-    b.comment ? `\n💬 ${esc(b.comment)}` : null,
+    '☎️ Зателефонуй: підтверди модель, запиши місто, відділення НП і спосіб оплати.',
   ].filter((x) => x !== null).join('\n');
 }
 
@@ -186,13 +177,10 @@ export default async function handler(req, res) {
   } else {
     phone = String(b.phone || '').replace(/[^\d+]/g, '');
     if (!b.name || phone.length < 10) {
-      return res.status(400).json({ ok: false, error: 'Вкажіть прізвище, ім’я і телефон' });
+      return res.status(400).json({ ok: false, error: 'Вкажіть ім’я і телефон' });
     }
     if (!orderItems(b).some((x) => x.product && x.price > 0)) {
       return res.status(400).json({ ok: false, error: 'Кошик порожній' });
-    }
-    if (!b.city || !b.branch) {
-      return res.status(400).json({ ok: false, error: 'Вкажіть місто і відділення' });
     }
     text = orderMessage(b, phone);
   }

@@ -391,7 +391,6 @@ body{background:var(--bg);color:var(--ink)}
 .opt{position:relative;cursor:pointer}
 .opt input{position:absolute;opacity:0;inset:0}
 .opt span{display:block;height:100%;padding:14px 16px;background:var(--surface-2);font-size:var(--s-small);line-height:1.4;color:var(--muted);outline:2px solid transparent;outline-offset:-2px;transition:background .2s,outline-color .2s}
-.opt-logo{width:36px;height:36px;object-fit:contain;background:#fff;padding:4px;margin-bottom:10px}
 .opt b{display:block;color:var(--ink);font-size:var(--s-body);margin-bottom:2px}
 .opt input:checked + span{outline-color:var(--accent);background:#2C3122}
 .opt input:focus-visible + span{outline:3px solid var(--accent)}
@@ -402,12 +401,6 @@ body{background:var(--bg);color:var(--ink)}
 .field textarea{resize:vertical}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
 /* підказки Нової Пошти */
-.ac-list{list-style:none;margin:-16px 0 16px;padding:0;max-height:300px;overflow:auto;background:var(--surface);border:2px solid var(--accent);border-top:0}
-.ac-list li{padding:12px 16px;cursor:pointer;font-size:var(--s-small);line-height:1.4}
-.ac-list li span{color:var(--muted)}
-.ac-list li b{color:var(--ink)}
-.ac-list [aria-selected="true"],.ac-list [role="option"]:hover{background:var(--surface-2)}
-.ac-list .ac-none{color:var(--muted);cursor:default}
 /* банер акції на початку форми */
 .promo{position:relative;margin-bottom:32px;padding:20px 22px 18px;background:var(--accent);color:var(--accent-ink)}
 .promo-tag{display:inline-block;padding:4px 10px;background:var(--accent-ink);color:var(--accent);font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
@@ -420,6 +413,7 @@ body{background:var(--bg);color:var(--ink)}
 .opts-v .opt-price .price-old{display:block;margin:2px 0 0}
 .order-total s{margin-left:8px;color:var(--muted)}
 .order-total .save{color:var(--accent);font-weight:700;font-size:var(--s-body)}
+.order-note{margin:-4px 0 8px;font-size:var(--s-small);color:var(--muted);line-height:1.5}
 .order-total{font-size:var(--s-body);margin:8px 0 16px;line-height:1.5}
 .order-total b{font-size:28px;color:var(--accent)}
 .order-total span{font-size:var(--s-small);color:var(--muted)}
@@ -639,29 +633,12 @@ body{background:var(--bg);color:var(--ink)}
     </fieldset>
     <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
 
-    <fieldset aria-labelledby="fs0"><h3 class="fs-title" id="fs0">Отримувач</h3>
-      <label class="field"><span>Прізвище та ім’я</span><input name="name" autocomplete="name" placeholder="Як у паспорті, для видачі посилки" required></label>
-      <label class="field"><span>Телефон отримувача</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+380 67 123 45 67" required aria-describedby="err-a"></label>
+    <fieldset aria-labelledby="fs0"><h3 class="fs-title" id="fs0">Ваші контакти</h3>
+      <label class="field"><span>Ваше ім’я</span><input name="name" autocomplete="name" placeholder="Наприклад, Олена" required></label>
+      <label class="field"><span>Телефон</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+380 67 123 45 67" required aria-describedby="err-a"></label>
+      <p class="order-note">Після замовлення менеджер зателефонує вам, підтвердить модель і запише дані для доставки. Оплата на пошті після огляду.</p>
     </fieldset>
 
-    <fieldset aria-labelledby="fs1"><h3 class="fs-title" id="fs1">Доставка</h3>
-      <div class="opts">
-        <label class="opt"><input type="radio" name="delivery" value="np" data-title="Нова Пошта, відділення" checked><span><img class="opt-logo" src="/assets/logos/nova-poshta.png" alt="" width="176" height="176"><b>Нова Пошта</b>у відділення, 1–2 дні</span></label>
-        <label class="opt"><input type="radio" name="delivery" value="npbox" data-title="Нова Пошта, поштомат"><span><img class="opt-logo" src="/assets/logos/nova-poshta.png" alt="" width="176" height="176"><b>Поштомат</b>Нової Пошти, 1–2 дні</span></label>
-        <label class="opt"><input type="radio" name="delivery" value="ukr" data-title="Укрпошта"><span><img class="opt-logo" src="/assets/logos/ukrposhta.png" alt="" width="90" height="84"><b>Укрпошта</b>3–10 днів, лише передоплата</span></label>
-      </div>
-      <label class="field"><span>Місто або село</span><input name="city" placeholder="Почніть вводити, наприклад Київ" required></label>
-      <label class="field"><span data-branch-label>Номер відділення Нової Пошти</span><input name="branch" required></label>
-    </fieldset>
-
-    <fieldset aria-labelledby="fs2"><h3 class="fs-title" id="fs2">Оплата</h3>
-      <div class="opts opts-2">
-        <label class="opt"><input type="radio" name="payment" value="cod" data-title="Накладений платіж" checked><span><b>Накладений платіж</b>оплата на пошті після огляду, + комісія НП 20 грн і 2%</span></label>
-        <label class="opt"><input type="radio" name="payment" value="prepay" data-title="Повна передоплата"><span><b>Повна передоплата</b>на картку, без комісії перевізника</span></label>
-      </div>
-    </fieldset>
-
-    <label class="field"><span>Коментар (необов’язково)</span><textarea name="comment" rows="2" placeholder="Побажання до замовлення"></textarea></label>
     <p class="order-total" data-order-total aria-live="polite"></p>
     <button class="btn" type="submit">Оформити замовлення</button>
     <button type="button" class="btn btn-ghost order-consult" data-consult>Є питання? Безкоштовна консультація</button>
@@ -734,7 +711,7 @@ body{background:var(--bg);color:var(--ink)}
 <script src="/shared/products.js" defer></script>
 <script src="/shared/track.js" defer></script>
 <script src="/shared/forms.js" defer></script>
-<script src="/shared/app.js?v=12" defer></script>
+<script src="/shared/app.js?v=13" defer></script>
 <script>
 // Плаваюча кнопка ховається, коли видно форму замовлення або футер
 addEventListener("DOMContentLoaded",()=>{const b=document.querySelector(".hero-cta"),seen=new Set();
