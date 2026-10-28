@@ -191,7 +191,7 @@
       $('[data-lb-img]', dlg).innerHTML = `<img src="${x.src}" alt="${x.alt}" width="1100" height="1100">`;
       $('[data-lb-cap]', dlg).innerHTML = x.title + (x.price ? ` — ${M.fmt(x.price)}${x.old ? ` <s>${M.fmt(x.old)}</s>` : ''}` : '');
       const count = $('[data-lb-count]', dlg);
-      if (count) count.textContent = list.length > 1 ? `${at + 1} / ${list.length}` : '';
+      if (count) count.textContent = x.count || (list.length > 1 ? `${at + 1} / ${list.length}` : '');
       $$('[data-lb-prev],[data-lb-next]', dlg).forEach((b) => (b.hidden = list.length < 2));
       const pick = $('[data-lb-pick]', dlg);
       pick.hidden = !x.pick;
@@ -238,29 +238,16 @@
         t.innerHTML = `<button type="button" class="g-photo" aria-label="Переглянути фото: ${x.title}"><img src="${x.src}" alt="${x.alt}" width="1100" height="1100" loading="lazy"><span class="g-more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg>${n > 1 ? `Дивитись ${n} фото` : 'Збільшити'}</span></button>
           <div class="g-info"><h3>${x.title}</h3><p><b>${M.fmt(x.price)}</b>${x.old ? ` <s>${M.fmt(x.old)}</s>` : ''}</p>
           <button type="button" class="btn g-order">Замовити</button></div>`;
-        $('.g-photo', t).addEventListener('click', () => open(x.slides, 0));
+        $('.g-photo', t).addEventListener('click', () => {
+          const all = list.flatMap((m, mi) => m.slides.map((sl, k) => ({ ...sl, count: `Модель ${mi + 1} з ${list.length}${m.slides.length > 1 ? ` · фото ${k + 1}/${m.slides.length}` : ''}` })));
+          open(all, all.findIndex((sl) => sl.pick === x.pick));
+        });
         $('.g-order', t).addEventListener('click', () => { const [c, s, v] = x.pick.split('|'); orderItem(c, s, v); });
         return t;
       }));
     }
-    // Стрічка гортається свайпом (scroll-snap), на комп'ютері — стрілками; лічильник «1–4 з 20»
-    const prev = $('[data-gal-prev]', root), next = $('[data-gal-next]', root), count = $('[data-gal-count]', root);
-    const gap = () => parseFloat(getComputedStyle(grid).columnGap) || 0;
-    const step = () => (grid.firstElementChild ? grid.firstElementChild.offsetWidth + gap() : grid.clientWidth);
-    function sync() {
-      const n = grid.children.length, w = step(), first = Math.round(grid.scrollLeft / w);
-      const seen = Math.max(1, Math.floor((grid.clientWidth + gap() + 1) / w)), last = Math.min(n, first + seen);
-      count.textContent = n ? `${first + 1}${last > first + 1 ? '–' + last : ''} з ${n}` : '';
-      prev.disabled = grid.scrollLeft < 4;
-      next.disabled = grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 4;
-    }
-    prev.addEventListener('click', () => grid.scrollBy({ left: -step() }));
-    next.addEventListener('click', () => grid.scrollBy({ left: step() }));
-    grid.addEventListener('scroll', () => requestAnimationFrame(sync), { passive: true });
-    addEventListener('resize', sync);
-    filters.addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; render(); grid.scrollLeft = 0; sync(); } });
+    filters.addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; render(); } });
     render();
-    sync();
   }
 
   /* ---------- Відгуки з даних (REVIEWS у products.js) ---------- */

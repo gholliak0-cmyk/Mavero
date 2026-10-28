@@ -68,17 +68,19 @@ body{background:var(--bg);color:var(--ink)}
 .catalog{padding:var(--sec) var(--m) 0}
 .catalog > div > h2{font-size:var(--s-h2);font-weight:800;letter-spacing:-.03em;line-height:1}
 .catalog > div > p{font-size:var(--s-body);margin-top:16px;max-width:52ch;color:var(--muted)}
-.pc-list{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-top:48px;align-items:start}
-.pc{background:var(--surface);display:flex;flex-direction:column}
-.pc-photo{position:relative;display:block;width:100%;aspect-ratio:1/1;background:var(--surface-2);overflow:hidden;cursor:zoom-in}
+.pc-list{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gap);margin-top:48px;scroll-margin-top:12px}
+/* на комп'ютері картка горизонтальна: фото зліва, вибір справа — уся картка вміщується в екран */
+.pc{display:grid;grid-template-columns:minmax(0,min(46%,600px)) 1fr}
+.pc{background:var(--surface)}
+.pc-photo{position:relative;display:block;width:100%;height:100%;min-height:100%;background:var(--surface-2);overflow:hidden;cursor:zoom-in}
 .pc-photo img{width:100%;height:100%;object-fit:cover;pointer-events:none}
-.pc-body{padding:24px 24px 28px}
+.pc-body{padding:28px 32px;align-self:center}
 .pc h3{font-size:var(--s-h3);font-weight:800;letter-spacing:-.02em;line-height:1.05}
 .pc-desc{font-size:var(--s-body);color:var(--muted);margin-top:10px;line-height:1.5}
-.pc-label{font-size:var(--s-small);color:var(--muted);margin:24px 0 10px}
+.pc-label{font-size:var(--s-small);color:var(--muted);margin:20px 0 8px}
 .pc-label b{color:var(--ink)}
 .pc-sizes{display:grid;gap:6px}
-.pc-size{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;width:100%;min-height:60px;padding:10px 16px;background:var(--surface-2);text-align:left;outline:2px solid transparent;outline-offset:-2px;transition:outline-color .2s,background .2s}
+.pc-size{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;width:100%;min-height:56px;padding:8px 16px;background:var(--surface-2);text-align:left;outline:2px solid transparent;outline-offset:-2px;transition:outline-color .2s,background .2s}
 .pc-size:hover{background:#30342A}
 .pc-size[aria-pressed="true"]{outline-color:var(--accent)}
 .pc-size > b{font-size:var(--s-lead);font-weight:800;flex:1;min-width:6ch}
@@ -90,12 +92,16 @@ body{background:var(--bg);color:var(--ink)}
 .sw-photo{width:68px;height:68px;border-radius:0;background:var(--surface-2);overflow:hidden;outline-offset:-2px}
 .sw-photo img{width:100%;height:100%;object-fit:cover}
 .sw[aria-pressed="true"]{outline-color:var(--accent)}
-.pc-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:28px}
+.pc-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:24px}
 .btn-ghost{background:transparent;color:var(--ink);outline:2px solid var(--ink);outline-offset:-2px}
 .btn-ghost:hover{color:var(--accent);outline-color:var(--accent)}
 @media (max-width:820px){
-  .pc-list{grid-template-columns:1fr}
-  .pc-body{padding:20px 16px 24px}
+  .pc{display:flex;flex-direction:column}
+  .pc-photo{height:auto;min-height:0;aspect-ratio:4/3}
+  .pc-body{padding:16px 16px 20px}
+  .pc-desc{margin-top:6px}
+  .pc-label{margin:14px 0 8px}
+  .price-big{font-size:24px}
 }
 @media (max-width:380px){.pc-actions{grid-template-columns:1fr}}
 
@@ -178,13 +184,7 @@ body{background:var(--bg);color:var(--ink)}
 .gal h2{font-size:var(--s-h2);font-weight:800;letter-spacing:-.03em;line-height:1}
 .gal-top p{font-size:var(--s-body);margin-top:16px;max-width:44ch}
 .gal-filters{display:flex;flex-wrap:wrap;gap:8px}
-.gal-wrap{position:relative;margin-top:40px}
-.gal-grid{--gal-gap:12px;display:flex;gap:var(--gal-gap);overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain;scrollbar-width:none;padding-bottom:4px}
-.gal-grid::-webkit-scrollbar{display:none}
-.gal-grid > .g-tile{flex:0 0 calc((100% - 3 * var(--gal-gap)) / 4);scroll-snap-align:start}
-.gal-nav{display:flex;align-items:center;gap:12px;margin-top:16px}
-.gal-count{flex:1;font-size:var(--s-small);color:var(--muted)}
-.gal-nav .lb-nav[disabled]{opacity:.35;cursor:default}
+.gal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 12px;margin-top:40px}
 .g-tile{display:flex;flex-direction:column;background:var(--surface)}
 .g-photo{position:relative;display:block;width:100%;aspect-ratio:1/1;overflow:hidden;padding:0;background:var(--surface-2);cursor:zoom-in}
 .g-photo img{width:100%;height:100%;object-fit:cover;pointer-events:none;transition:transform .6s var(--ease)}
@@ -211,8 +211,7 @@ body{background:var(--bg);color:var(--ink)}
 .lb-nav{min-width:44px;min-height:44px;background:var(--surface-2);color:var(--ink);font-size:var(--s-lead);font-weight:800}
 .lb-nav:hover{background:#30342A}
 @media (max-width:820px){
-  .gal-grid{--gal-gap:8px;margin-right:calc(-1 * var(--m))}
-  .gal-grid > .g-tile{flex-basis:calc((100% - var(--m)) / 1.6)}
+  .gal-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px}
   .g-info{padding:10px 10px 12px}
   .g-info h3{font-size:15px}
   .g-info b{font-size:18px}
@@ -488,10 +487,10 @@ body{background:var(--bg);color:var(--ink)}
 <nav class="hero-cta" aria-label="Швидкі дії"><a class="btn" href="#catalog">Обрати іграшку</a><button type="button" class="btn" data-consult>Консультація</button></nav>
 
 <main>
-<section class="catalog" id="catalog" aria-labelledby="cat-h">
+<section class="catalog" aria-labelledby="cat-h">
   <div data-reveal><h2 id="cat-h">Оберіть іграшку</h2>
   <p>Натисніть «Замовити», а розмір і колір оберете у формі. Не знаєте, що підійде? Натисніть «Консультація», і ми допоможемо.</p></div>
-  <div class="pc-list" data-catalog></div>
+  <div class="pc-list" id="catalog" data-catalog></div>
   <dialog class="lb" aria-label="Перегляд фото">
     <div class="lb-img" data-lb-img></div>
     <div class="lb-bar">
@@ -509,15 +508,10 @@ body{background:var(--bg);color:var(--ink)}
 <section class="gal" id="gallery" aria-labelledby="gal-h" data-gallery>
   <div class="gal-top" data-reveal>
     <div><h2 id="gal-h">Усі моделі</h2>
-    <p>Гортайте вбік, щоб переглянути моделі. Натисніть на фото, щоб побачити всі кадри. Сподобалась модель — тисніть «Замовити» під фото.</p></div>
+    <p>Натисніть на фото, щоб відкрити модель. Усередині гортайте вбік: побачите всі її кадри, а далі наступні моделі. Сподобалась — тисніть «Замовити».</p></div>
     <div class="gal-filters" role="group" aria-label="Що показати" data-gallery-filters></div>
   </div>
-  <div class="gal-wrap">
-    <div class="gal-grid" data-gallery-grid tabindex="0" aria-label="Моделі, гортайте вбік"></div>
-    <div class="gal-nav"><span class="gal-count" data-gal-count aria-live="polite"></span>
-      <button type="button" class="lb-nav" data-gal-prev aria-label="Попередні моделі">‹</button>
-      <button type="button" class="lb-nav" data-gal-next aria-label="Наступні моделі">›</button></div>
-  </div>
+  <div class="gal-grid" data-gallery-grid></div>
   <dialog class="lb" aria-label="Перегляд фото">
     <div class="lb-img" data-lb-img></div>
     <div class="lb-bar">
@@ -722,7 +716,7 @@ body{background:var(--bg);color:var(--ink)}
 <script src="/shared/products.js" defer></script>
 <script src="/shared/track.js" defer></script>
 <script src="/shared/forms.js" defer></script>
-<script src="/shared/app.js?v=10" defer></script>
+<script src="/shared/app.js?v=11" defer></script>
 <script>
 // Плаваюча кнопка ховається, коли видно форму замовлення або футер
 addEventListener("DOMContentLoaded",()=>{const b=document.querySelector(".hero-cta"),seen=new Set();
