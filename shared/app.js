@@ -62,13 +62,20 @@
   // Кружечок кольору: фон ставимо через style, бо в «різнобарвного» він з лапками всередині
   const paintDots = (root) => $$('[data-sw]', root).forEach((d) => (d.style.background = M.COLOURS[d.dataset.sw].swatch));
 
-  // Перехід до форми замовлення: вибраний товар уже стоїть у формі, розмір і колір можна змінити там
-  function goOrder() {
-    const f = $('#order');
+  // Перехід до форми замовлення: вибраний товар уже стоїть у формі, одразу видно поля «Ім’я» і «Телефон».
+  // pick = true — товар ще не обрано (кнопка «Замовити» на першому екрані), тому вибір розміру й кольору відкритий
+  function goOrder(pick) {
+    const f = $('.order-form');
     if (!f) return;
     checkout();
+    setPick(f, !!pick);
     f.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     if (location.hash !== '#order') history.replaceState(null, '', '#order');
+  }
+  function setPick(f, on) {
+    f.classList.toggle('pick-open', on);
+    const t = $('[data-pick-toggle]', f);
+    if (t) { t.setAttribute('aria-expanded', on); t.textContent = on ? 'Згорнути вибір' : 'Змінити модель'; }
   }
 
   /* ---------- Каталог: картка на кожен товар — фото, назва, опис, розміри з цінами, кольори ---------- */
@@ -350,7 +357,14 @@
       cart.auto = false;
       cart.lines.push({ k: keyOf(it), n: 1 });
       cartActivate(cart.lines.length - 1);
+      setPick(form, true);
       box.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    });
+
+    $('[data-pick-toggle]', form).addEventListener('click', () => setPick(form, !form.classList.contains('pick-open')));
+    $('[data-pick-done]', form).addEventListener('click', () => {
+      setPick(form, false);
+      form.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     });
 
     box.addEventListener('change', (e) => {
@@ -370,7 +384,7 @@
         const n = cartCount();
         const old = cartItems().reduce((a, x) => a + (x.v.old || x.v.price) * x.n, 0);
         total.innerHTML = `До сплати: <b>${M.fmt(sum)}</b>${old > sum ? `<s>${M.fmt(old)}</s>` : ''}` + (n > 1 ? ` за ${n} шт.` : '') +
-          (old > sum ? `<br><span class="save">Ваша знижка: ${M.fmt(old - sum)}</span>` : '');
+          (old > sum ? `<br><span class="save"><i class="promo-tag">Акція</i> Ваша знижка: ${M.fmt(old - sum)}</span>` : '');
       }
     }
     listeners.push(drawPick);
@@ -563,6 +577,8 @@
     $$('form[data-order]').forEach(mountOrder);
     $$('[data-fade]').forEach(mountCrossfade);
     $$('[data-gallery]').forEach(mountGallery);
+    // «Замовити» на першому екрані: одразу до форми, вибір товару відкритий
+    $$('[data-order-now]').forEach((b) => b.addEventListener('click', () => goOrder(true)));
     $$('[data-promo-max]').forEach((n) => { n.textContent = M.fmt(Math.max(...M.ITEMS.map((x) => (x.v.old || x.v.price) - x.v.price))); });
     $$('[data-reviews]').forEach(mountReviews);
     $$('form[data-review]').forEach(mountReviewForm);
