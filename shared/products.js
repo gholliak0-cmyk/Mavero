@@ -14,7 +14,7 @@
     beige:   { name: 'Бежевий',      faces: ['#F1E2C8', '#E8D3B0', '#D9C19A'], swatch: '#E8D3B0' },
   };
 
-  const PINK_PHOTOS = ['DSC03872.jpg', 'DSC03869.jpg', 'DSC03870.jpg', 'DSC03873.jpg', 'DSC03874.jpg', 'DSC03875.jpg'];
+  const PINK_PHOTOS = ['DSC03872.webp', 'DSC03869.webp', 'DSC03870.webp', 'DSC03873.webp', 'DSC03874.webp', 'DSC03875.webp'];
 
   const cubeZones = {
     15: ['Лабіринт', 'Застібки', 'Засув', 'Годинник', 'Лічниця', 'Котушка', 'Розетка з вилкою', 'Дзвіночок', 'Гра «Хто що їсть?»'],
@@ -36,7 +36,7 @@
         price, old,
         code: codes[c],
         zones: cubeZones[id],
-        photo: `${IMG}p/cube-${id}-${c}.jpg`,
+        photo: `${IMG}p/cube-${id}-${c}.webp`,
       })),
     };
   }
@@ -186,22 +186,22 @@
      Перше — з прайсу постачальника, далі — з папок постачальника на Google Диску.
      kid: true — фото з дитиною (у галереї потрапляє в «Живі фото»). */
   const EXTRA = {
-    'cube|23|pink': [['DSC03870.jpg', 'Рожевий кубик 23 см у грі', true], ['DSC03875.jpg', 'Поруч з дитиною — видно розмір 23 см', true]],
-    'cube|15|grey': [['DSC04410.jpg', 'Сірий кубик 15 см у грі', true]],
-    'board|40x50|rocket': [['p/board-40x50-rocket-kid1.jpg', 'Борд «Ракета і робот» у грі: можна гратися на підлозі', true],
-                           ['p/board-40x50-rocket-kid2.jpg', 'Лабіринт і ксилофон зблизька, в руках дитини', true],
-                           ['p/board-40x50-rocket-kid3.jpg', 'Те саме фото збоку: ракета, робот, світлофор, рахівниця', true]],
-    'board|40x50|blue': [['p/board-40x50-blue-2.jpg', 'Синій борд 40×50 цілком'], ['p/board-40x50-blue-3.jpg', 'Годинник, хмаринка з намистинами й ракета'], ['p/board-40x50-blue-4.jpg', 'Ксилофон і черевичок із застібками'],
-                         ['p/board-40x50-blue-5.jpg', 'Ракета з дверцятами, годинник і спінер зблизька'], ['p/board-40x50-blue-6.jpg', 'Масажний валик, сортер і дзвіночок']],
-    'board|40x50|pink': [['p/board-40x50-pink-2.jpg', 'Рожевий борд 40×50 цілком'], ['p/board-40x50-pink-3.jpg', 'Карета, замок і сортер зблизька'], ['p/board-40x50-pink-4.jpg', 'Ксилофон і черевичок із застібками'],
-                         ['p/board-40x50-pink-5.jpg', 'Вимикач, розетка, дзвіночок і сортер зблизька'], ['p/board-40x50-pink-6.jpg', 'Хмаринка з намистинами й літери']],
-    'board|50x60|tractor': [['p/board-50x60-tractor-kid1.jpg', 'Борд «Трактор і крокодил» у грі: вмикає лампочку', true],
-                            ['p/board-50x60-tractor-kid2.jpg', 'Борд стоїть біля стіни, дитина грається сидячи', true],
-                            ['p/board-50x60-tractor-kid3.jpg', 'Світлофор, шестерні й трактор на рівні рук дитини', true],
-                            ['p/board-50x60-tractor-kid4.jpg', 'Великий борд 50×60 поруч з дитиною — видно розмір', true]],
+    'cube|23|pink': [['DSC03870.webp', 'Рожевий кубик 23 см у грі', true], ['DSC03875.webp', 'Поруч з дитиною — видно розмір 23 см', true]],
+    'cube|15|grey': [['DSC04410.webp', 'Сірий кубик 15 см у грі', true]],
+    'board|40x50|rocket': [['p/board-40x50-rocket-kid1.webp', 'Борд «Ракета і робот» у грі: можна гратися на підлозі', true],
+                           ['p/board-40x50-rocket-kid2.webp', 'Лабіринт і ксилофон зблизька, в руках дитини', true],
+                           ['p/board-40x50-rocket-kid3.webp', 'Те саме фото збоку: ракета, робот, світлофор, рахівниця', true]],
+    'board|40x50|blue': [['p/board-40x50-blue-2.webp', 'Синій борд 40×50 цілком'], ['p/board-40x50-blue-3.webp', 'Годинник, хмаринка з намистинами й ракета'], ['p/board-40x50-blue-4.webp', 'Ксилофон і черевичок із застібками'],
+                         ['p/board-40x50-blue-5.webp', 'Ракета з дверцятами, годинник і спінер зблизька'], ['p/board-40x50-blue-6.webp', 'Масажний валик, сортер і дзвіночок']],
+    'board|40x50|pink': [['p/board-40x50-pink-2.webp', 'Рожевий борд 40×50 цілком'], ['p/board-40x50-pink-3.webp', 'Карета, замок і сортер зблизька'], ['p/board-40x50-pink-4.webp', 'Ксилофон і черевичок із застібками'],
+                         ['p/board-40x50-pink-5.webp', 'Вимикач, розетка, дзвіночок і сортер зблизька'], ['p/board-40x50-pink-6.webp', 'Хмаринка з намистинами й літери']],
+    'board|50x60|tractor': [['p/board-50x60-tractor-kid1.webp', 'Борд «Трактор і крокодил» у грі: вмикає лампочку', true],
+                            ['p/board-50x60-tractor-kid2.webp', 'Борд стоїть біля стіни, дитина грається сидячи', true],
+                            ['p/board-50x60-tractor-kid3.webp', 'Світлофор, шестерні й трактор на рівні рук дитини', true],
+                            ['p/board-50x60-tractor-kid4.webp', 'Великий борд 50×60 поруч з дитиною — видно розмір', true]],
   };
   ITEMS.forEach(({ cat, size, v }) => {
-    if (cat.id === 'board') v.photo = `${IMG}p/board-${size.id}-${v.id}.jpg`;
+    if (cat.id === 'board') v.photo = `${IMG}p/board-${size.id}-${v.id}.webp`;
     const title = `${cat.name} ${size.label}, ${v.name.toLowerCase()}`;
     v.gallery = [{ src: v.photo, alt: title, cap: `${title}: фото моделі` }]
       .concat((EXTRA[`${cat.id}|${size.id}|${v.id}`] || []).map(([f, cap, kid]) => ({ src: IMG + f, alt: cap, cap, life: !!kid })));

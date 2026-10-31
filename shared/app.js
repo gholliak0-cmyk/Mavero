@@ -3,6 +3,8 @@
   const M = window.MAVERO;
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  // Зменшена копія фото (640 px) для мініатюр і плиток: на телефоні вантажиться в кілька разів менше
+  const sm = (src) => src.replace(/\.webp$/, '-s.webp');
 
   /* ---------- Що замовляють (спільне для карток, галереї і форми) ---------- */
   const state = { cat: M.CATALOG[0], size: M.CATALOG[0].sizes[1], v: M.CATALOG[0].sizes[1].variants[1] };
@@ -97,7 +99,7 @@
         $('[data-pc-vname]', card).textContent = pick.v.name;
         $('[data-pc-sw]', card).innerHTML = pick.size.variants.map((v) => cat.id === 'cube'
           ? `<button type="button" class="sw" data-v="${v.id}" data-sw="${v.colour}" aria-pressed="${v === pick.v}" aria-label="${v.name}" title="${v.name}"></button>`
-          : `<button type="button" class="sw sw-photo" data-v="${v.id}" aria-pressed="${v === pick.v}" aria-label="${v.name}" title="${v.name}"><img src="${v.photo}" alt="" width="1100" height="1100" loading="lazy"></button>`).join('');
+          : `<button type="button" class="sw sw-photo" data-v="${v.id}" aria-pressed="${v === pick.v}" aria-label="${v.name}" title="${v.name}"><img src="${sm(v.photo)}" alt="" width="1100" height="1100" loading="lazy"></button>`).join('');
         paintDots(card);
         $('[data-consult]', card).dataset.consult = keyOf(pick);
       }
@@ -235,7 +237,7 @@
         const t = document.createElement('article');
         t.className = 'g-tile';
         const n = x.slides.length;
-        t.innerHTML = `<button type="button" class="g-photo" aria-label="Переглянути фото: ${x.title}"><img src="${x.src}" alt="${x.alt}" width="1100" height="1100" loading="lazy"><span class="g-more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg>${n > 1 ? `Дивитись ${n} фото` : 'Збільшити'}</span></button>
+        t.innerHTML = `<button type="button" class="g-photo" aria-label="Переглянути фото: ${x.title}"><img src="${sm(x.src)}" alt="${x.alt}" width="1100" height="1100" loading="lazy"><span class="g-more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg>${n > 1 ? `Дивитись ${n} фото` : 'Збільшити'}</span></button>
           <div class="g-info"><h3>${x.title}</h3><p><b>${M.fmt(x.price)}</b>${x.old ? ` <s>${M.fmt(x.old)}</s>` : ''}</p>
           <button type="button" class="btn g-order">Замовити</button></div>`;
         $('.g-photo', t).addEventListener('click', () => {
@@ -302,7 +304,7 @@
       $('[data-pick-vlabel]', box).textContent = s.cat.id === 'cube' ? 'Колір' : 'Модель';
       $('[data-pick-v]', box).innerHTML = s.size.variants.map((v) => opt('p_v', v.id, v === s.v, s.cat.id === 'cube'
         ? `<b><i class="dot" data-sw="${v.colour}"></i>${v.name}</b>`
-        : `<img class="opt-thumb" src="${v.photo}" alt="" width="1100" height="1100" loading="lazy"><b>${v.name}</b><i class="opt-price"><em class="price-big">${M.fmt(v.price)}</em>${v.old ? ` <s class="price-old">${M.fmt(v.old)}</s>` : ''}</i>`)).join('');
+        : `<img class="opt-thumb" src="${sm(v.photo)}" alt="" width="1100" height="1100" loading="lazy"><b>${v.name}</b><i class="opt-price"><em class="price-big">${M.fmt(v.price)}</em>${v.old ? ` <s class="price-old">${M.fmt(v.old)}</s>` : ''}</i>`)).join('');
       paintDots(box);
       $('[data-pick-title]', box).textContent = cart.lines.length > 1 ? `Товар ${cart.at + 1} з ${cart.lines.length}: розмір і колір` : 'Що замовляєте';
       $('[data-consult]', box).dataset.consult = keyOf(s);
@@ -316,7 +318,7 @@
       const items = cartItems(), many = items.length > 1;
       list.innerHTML = items.map((x, i) => `
         <li class="cart-line${many && i === cart.at ? ' is-active' : ''}" data-i="${i}">
-          <button type="button" class="cart-photo" data-photos aria-label="Переглянути фото: ${lineName(x)}"><img src="${x.v.photo}" alt="" width="1100" height="1100" loading="lazy"><span class="g-more">${x.v.gallery.length > 1 ? `${x.v.gallery.length} фото` : 'фото'}</span></button>
+          <button type="button" class="cart-photo" data-photos aria-label="Переглянути фото: ${lineName(x)}"><img src="${sm(x.v.photo)}" alt="" width="1100" height="1100" loading="lazy"><span class="g-more">${x.v.gallery.length > 1 ? `${x.v.gallery.length} фото` : 'фото'}</span></button>
           <span class="cart-info"><b>${lineName(x)}</b><em class="price-big">${M.fmt(x.v.price)}</em>${x.v.old ? ` <s class="price-old">${M.fmt(x.v.old)}</s>` : ''}${many && i !== cart.at ? '<small>натисніть, щоб змінити</small>' : ''}</span>
           <span class="cart-qty"><button type="button" data-q="-1" aria-label="Менше: ${lineName(x)}"${x.n < 2 ? ' disabled' : ''}>−</button><output aria-live="polite">${x.n}</output><button type="button" data-q="1" aria-label="Більше: ${lineName(x)}"${x.n > 9 ? ' disabled' : ''}>+</button></span>
           ${many ? `<button type="button" class="cart-del" data-del aria-label="Прибрати із замовлення: ${lineName(x)}">×</button>` : ''}
@@ -429,7 +431,7 @@
     if (!dlg) return;
     const first = name.split(/\s+/)[0];
     $('[data-thanks-name]', dlg).textContent = first ? `${first}, дякуємо!` : 'Дякуємо!';
-    $('[data-thanks-list]', dlg).innerHTML = items.map((x) => `<li><span class="cart-img">${x.v.photo ? `<img src="${x.v.photo}" alt="" width="1100" height="1100">` : M.art(x.cat, x.size, x.v)}</span><span>${lineName(x)}${x.n > 1 ? ` × ${x.n}` : ''}</span><b>${M.fmt(x.v.price * x.n)}</b></li>`).join('');
+    $('[data-thanks-list]', dlg).innerHTML = items.map((x) => `<li><span class="cart-img">${x.v.photo ? `<img src="${sm(x.v.photo)}" alt="" width="1100" height="1100">` : M.art(x.cat, x.size, x.v)}</span><span>${lineName(x)}${x.n > 1 ? ` × ${x.n}` : ''}</span><b>${M.fmt(x.v.price * x.n)}</b></li>`).join('');
     $('[data-thanks-sum]', dlg).textContent = M.fmt(sum);
     $('[data-thanks-pay]', dlg).textContent = 'Менеджер зателефонує, щоб записати дані для доставки. Платити зараз нічого не потрібно.';
     dlg.showModal();
