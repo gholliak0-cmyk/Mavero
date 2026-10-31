@@ -233,14 +233,19 @@
     const grid = $('[data-gallery-grid]', root), filters = $('[data-gallery-filters]', root), dlg = $('dialog', root);
     const shots = M.ITEMS.map((it) => ({ ...slidesOf(it)[0], kind: it.cat.id, slides: slidesOf(it) }));
     const kinds = [['all', 'Усі'], ['cube', 'Бізікубики'], ['board', 'Бізіборди']];
-    let kind = 'all';
+    let kind = 'all', all = false;
     const open = mountLightbox(dlg);
+    // Спершу кілька моделей, решта — кнопкою «Показати всі», щоб на телефоні не гортати 20 плиток
+    const more = $('[data-gallery-more]', root);
+    const first = () => (matchMedia('(max-width:820px)').matches ? 4 : 8);
 
     function render() {
       const list = shots.filter((x) => kind === 'all' || x.kind === kind);
       filters.replaceChildren(...kinds.map(([k, t]) => chip(`${t} · ${k === 'all' ? shots.length : shots.filter((x) => x.kind === k).length}`, k === kind, { kind: k })));
       // Плитка = фото (тап — переглянути всі кадри) + назва, ціна й кнопка «Замовити», видимі завжди
-      grid.replaceChildren(...list.map((x) => {
+      more.hidden = all || list.length <= first();
+      more.textContent = `Показати всі моделі (${list.length})`;
+      grid.replaceChildren(...list.slice(0, all ? list.length : first()).map((x) => {
         const t = document.createElement('article');
         t.className = 'g-tile';
         const n = x.slides.length;
@@ -256,6 +261,7 @@
       }));
     }
     filters.addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; render(); } });
+    more.addEventListener('click', () => { all = true; render(); });
     render();
   }
 
