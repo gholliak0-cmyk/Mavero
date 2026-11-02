@@ -101,15 +101,25 @@ h1{font-size:var(--h1)} h2{font-size:var(--h2)} h3{font-size:20px;font-weight:60
 .ticks{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:16px;font-weight:700;color:var(--muted)}
 .ticks li::before{content:"✓ ";color:var(--glow);font-weight:900}
 .hero-photo{position:relative}
-.hero-photo img{width:100%;aspect-ratio:5/4;object-fit:cover;border-radius:32px;box-shadow:0 30px 80px -20px rgba(138,60,255,.65),0 0 0 1px var(--line)}
+.slides{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:32px;box-shadow:0 30px 80px -20px rgba(138,60,255,.65),0 0 0 1px var(--line);overscroll-behavior-x:contain}
+.slides::-webkit-scrollbar{display:none}
+.slides img{flex:0 0 100%;width:100%;aspect-ratio:5/4;object-fit:cover;scroll-snap-align:center;scroll-snap-stop:always}
+.dots{position:absolute;right:16px;bottom:16px;display:flex;gap:6px;padding:7px 9px;border-radius:999px;background:rgba(20,15,51,.6);backdrop-filter:blur(6px)}
+.dots button{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.45);transition:width .2s,background .2s}
+.dots button[aria-current="true"]{width:22px;border-radius:5px;background:var(--glow)}
+.arr{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;background:rgba(255,248,238,.92);color:var(--cream-ink);font-size:24px;font-weight:900;display:grid;place-items:center;box-shadow:0 8px 20px -6px rgba(0,0,0,.5);opacity:0;transition:opacity .2s}
+.hero-photo:hover .arr{opacity:1}
+.arr-l{left:14px}.arr-r{right:14px}
+@media (hover:none){.arr{display:none}}
 .hero-photo::after{content:"";position:absolute;inset:-12% -8%;z-index:-1;background:radial-gradient(closest-side,rgba(138,60,255,.45),transparent)}
 .chip{position:absolute;background:var(--cream);color:var(--cream-ink);font-weight:900;font-size:15px;padding:10px 14px;border-radius:16px;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);display:flex;gap:8px;align-items:center}
 .chip-1{left:-14px;bottom:28px;transform:rotate(-4deg)}
-.chip-2{right:-10px;top:24px;transform:rotate(3deg)}
+.chip-2{right:14px;top:24px;transform:rotate(3deg)}
 @media (max-width:900px){
   .hero{grid-template-columns:1fr;padding-top:4px}
   .hero-photo{order:-1}
-  .hero-photo img{border-radius:24px;aspect-ratio:16/11}
+  .slides{border-radius:24px}.slides img{aspect-ratio:16/11}
+  .dots{right:12px;bottom:12px}
   .hero-text{gap:14px}.hero .eyebrow{display:none}.hero .lead{order:5;font-size:17px}
   .price b{font-size:40px}
   .chip-1{left:12px;bottom:14px}.chip-2{right:12px;top:14px}
@@ -190,6 +200,15 @@ h1{font-size:var(--h1)} h2{font-size:var(--h2)} h3{font-size:20px;font-weight:60
 .sum .total{font-size:22px;font-weight:900}
 .form .btn{min-height:62px;font-size:19px}
 .form-note{font-size:14px;color:#5A527F;text-align:center}
+@media (max-width:560px){
+  .form{gap:12px;padding:18px 16px;border-radius:22px}
+  .form h3{font-size:19px}
+  .line{grid-template-columns:56px 1fr auto;gap:10px;padding:8px}.line img{width:56px;height:56px}
+  .line b{font-size:14px}.qty button{width:34px;height:36px}
+  .field{gap:4px}.field input{min-height:50px}
+  .form .btn{min-height:56px;font-size:18px}
+  .form-note{font-size:12.5px;line-height:1.4}
+}
 .form-err{color:#D3174F;font-weight:800;text-align:center}
 .form-err:empty{display:none}
 
@@ -245,7 +264,14 @@ dialog::backdrop{background:rgba(10,6,30,.7);backdrop-filter:blur(4px)}
         </ul>
       </div>
       <figure class="hero-photo">
-        <img src="/assets/tent/night.jpg" srcset="/assets/tent/night-s.jpg 720w, /assets/tent/night.jpg 1400w" sizes="(max-width:900px) 100vw, 55vw" width="1400" height="1120" alt="Дівчинка лежить у наметі на ліжку, над нею світиться зоряна гірлянда" fetchpriority="high">
+        <div class="slides" data-slides aria-label="Фото намету, гортайте">
+          <img src="/assets/tent/night.jpg" srcset="/assets/tent/night-s.jpg 720w, /assets/tent/night.jpg 1400w" sizes="(max-width:900px) 100vw, 55vw" width="1400" height="1120" alt="Дівчинка лежить у наметі на ліжку, над нею світиться зоряна гірлянда" fetchpriority="high">
+          <img src="/assets/tent/day-s.jpg" srcset="/assets/tent/day-s.jpg 720w, /assets/tent/day.jpg 1400w" sizes="(max-width:900px) 100vw, 55vw" width="1400" height="1120" alt="Намет з русалочкою на дитячому ліжку вдень" loading="lazy">
+          <img src="/assets/tent/kit-s.jpg" srcset="/assets/tent/kit-s.jpg 720w, /assets/tent/kit.jpg 1400w" sizes="(max-width:900px) 100vw, 55vw" width="1400" height="1120" alt="Комплект: чохол, складений намет, пульт, гірлянда і кріплення" loading="lazy">
+        </div>
+        <button class="arr arr-l" type="button" data-arr="-1" aria-label="Попереднє фото">‹</button>
+        <button class="arr arr-r" type="button" data-arr="1" aria-label="Наступне фото">›</button>
+        <div class="dots" data-dots></div>
         <span class="chip chip-1">✨ Гірлянда на пульті</span>
         <span class="chip chip-2">🧜‍♀️ Русалочка</span>
       </figure>
@@ -418,7 +444,31 @@ dialog::backdrop{background:rgba(10,6,30,.7);backdrop-filter:blur(4px)}
   render();
 
   const checkout = () => M.trackOnce('ic', 'InitiateCheckout', ev());
-  $$('[data-buy]').forEach((a) => a.addEventListener('click', checkout));
+  const formBox = $('#order-form');
+  function goForm(e) {
+    e.preventDefault();
+    checkout();
+    const r = formBox.getBoundingClientRect(), vh = innerHeight;
+    // форма вміщається — ставимо її по центру екрана; ні — верх форми з невеликим відступом
+    const y = scrollY + r.top - (r.height < vh - 24 ? (vh - r.height) / 2 : 12);
+    scrollTo({ top: Math.max(0, y), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }
+  $$('[data-buy]').forEach((a) => a.addEventListener('click', goForm));
+
+  // фото на першому екрані: свайп, точки, стрілки
+  const sl = $('[data-slides]'), dots = $('[data-dots]'), n = sl.children.length;
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('button');
+    d.type = 'button'; d.setAttribute('aria-label', 'Фото ' + (i + 1));
+    d.addEventListener('click', () => go(i));
+    dots.append(d);
+  }
+  const cur = () => Math.round(sl.scrollLeft / sl.clientWidth);
+  const go = (i) => sl.scrollTo({ left: ((i + n) % n) * sl.clientWidth, behavior: 'smooth' });
+  const mark = () => [...dots.children].forEach((d, i) => d.setAttribute('aria-current', i === cur()));
+  sl.addEventListener('scroll', () => requestAnimationFrame(mark), { passive: true });
+  $$('[data-arr]').forEach((b) => b.addEventListener('click', () => go(cur() + +b.dataset.arr)));
+  mark();
 
   const form = $('#order-form'), f = form.elements;
   form.addEventListener('focusin', checkout);
