@@ -146,6 +146,15 @@ async function sendToMeta(req, b, phone) {
 }
 
 /* ---------- Google Таблиця (необов'язково): SHEETS_WEBHOOK_URL + SHEETS_SECRET ---------- */
+// для таблиці: завжди +380XXXXXXXXX (067… / 67… / 380… / +380…)
+function uaPhone(p) {
+  const d = String(p || '').replace(/\D/g, '');
+  if (d.length === 9) return '+380' + d;
+  if (d.length === 10 && d[0] === '0') return '+38' + d;
+  if (d.length === 12 && d.startsWith('380')) return '+' + d;
+  return String(p || '');
+}
+
 async function sendToSheet(row) {
   const { SHEETS_WEBHOOK_URL: url, SHEETS_SECRET: secret } = process.env;
   if (!url) return;
@@ -225,14 +234,14 @@ export default async function handler(req, res) {
       sendToSheet([new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' }), 'Mavero', 'Замовлення',
         items.map((x) => x.product).join(' + '), items.map((x) => x.colour || '').join(' + '), '',
         items.map((x) => x.code || '').join(' + '), items.reduce((a, x) => a + x.qty, 0),
-        items.reduce((a, x) => a + x.price * x.qty, 0), String(b.name || '').trim(), phone,
+        items.reduce((a, x) => a + x.price * x.qty, 0), String(b.name || '').trim(), uaPhone(phone),
         String(b.comment || '').trim().slice(0, 500)]),
     ]);
   } else if (b.type === 'consult') {
     await Promise.all([
       sendToMeta(req, b, phone),
       sendToSheet([new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' }), 'Mavero', 'Консультація', String(b.item || ''), '', '', '', '', '',
-        String(b.name || '').trim(), phone, String(b.text || '').trim().slice(0, 500)]),
+        String(b.name || '').trim(), uaPhone(phone), String(b.text || '').trim().slice(0, 500)]),
     ]);
   }
   else if (b.type === 'question') await sendToMeta(req, b, /^\+?[\d\s()-]{10,}$/.test(String(b.contact || '')) ? String(b.contact) : '');
