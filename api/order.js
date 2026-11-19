@@ -9,7 +9,8 @@
    Meta Conversions API (необов'язково, вмикається, коли задані обидві змінні):
      META_PIXEL_ID     — ID пікселя (той самий, що в shared/track.js)
      META_CAPI_TOKEN   — токен з Events Manager → Налаштування → Conversions API
-     META_TEST_CODE    — тимчасово, код з вкладки «Тестові події», щоб перевірити */
+     META_TEST_CODE    — тимчасово, код з вкладки «Тестові події», щоб перевірити
+   Google Таблиця (необов'язково): SHEETS_WEBHOOK_URL (Apps Script web app), SHEETS_SECRET */
 
 import { createHash } from 'node:crypto';
 
@@ -144,6 +145,23 @@ async function sendToMeta(req, b, phone) {
   }
 }
 
+/* ---------- Google Таблиця (необов'язково): SHEETS_WEBHOOK_URL + SHEETS_SECRET ---------- */
+async function sendToSheet(row) {
+  const { SHEETS_WEBHOOK_URL: url, SHEETS_SECRET: secret } = process.env;
+  if (!url) return;
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret, row }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) console.error('Sheets error', r.status);
+  } catch (x) {
+    console.error('Sheets failed', x.message); // заявка вже в Telegram — покупцеві помилку не показуємо
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false });
 
@@ -200,7 +218,23 @@ export default async function handler(req, res) {
     console.error('Telegram error', tg.status, await tg.text());
     return res.status(502).json({ ok: false, error: 'Не вдалося надіслати, спробуйте ще раз' });
   }
-  if (b.type === 'order' || b.type === 'consult') await sendToMeta(req, b, phone);
+  if (b.type === 'order') {
+    const items = orderItems(b);
+    await Promise.all([
+      sendToMeta(req, b, phone),
+      sendToSheet([new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' }), 'Mavero', 'Замовлення',
+        items.map((x) => x.product).join(' + '), items.map((x) => x.colour || '').join(' + '), '',
+        items.map((x) => x.code || '').join(' + '), items.reduce((a, x) => a + x.qty, 0),
+        items.reduce((a, x) => a + x.price * x.qty, 0), String(b.name || '').trim(), phone,
+        String(b.comment || '').trim().slice(0, 500)]),
+    ]);
+  } else if (b.type === 'consult') {
+    await Promise.all([
+      sendToMeta(req, b, phone),
+      sendToSheet([new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' }), 'Mavero', 'Консультація', String(b.item || ''), '', '', '', '', '',
+        String(b.name || '').trim(), phone, String(b.text || '').trim().slice(0, 500)]),
+    ]);
+  }
   else if (b.type === 'question') await sendToMeta(req, b, /^\+?[\d\s()-]{10,}$/.test(String(b.contact || '')) ? String(b.contact) : '');
   return res.status(200).json({ ok: true });
 }
